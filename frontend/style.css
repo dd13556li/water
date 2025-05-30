@@ -1,0 +1,68 @@
+body {
+    font-family: 'Arial', sans-serif;
+    text-align: center;
+    background: #f4f4f9;
+    color: #333;
+}
+
+h1 {
+    color: #0077b6;
+}
+
+form {
+    margin: 20px auto;
+    padding: 10px;
+    background: #e3f2fd;
+    display: inline-block;
+    border-radius: 5px;
+}
+
+input {
+    margin: 5px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+button {
+    padding: 10px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+button:hover {
+    background: #0077b6;
+    color: white;
+}
+
+table {
+    width: 80%;
+    margin: auto;
+    border-collapse: collapse;
+    background: white;
+    box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+th {
+    background: #0077b6;
+    color: white;
+    padding: 15px;
+}
+
+td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.low-days {
+    color: red;
+    font-weight: bold;
+}
+
+.icon {
+    font-size: 18px;
+    padding: 5px;
+}
