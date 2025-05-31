@@ -1,78 +1,161 @@
-import sqlite3
 from flask import Flask, request, jsonify
+
 from flask_cors import CORS
+
+import json
+
 import datetime
 
+import os
+
+
+
 app = Flask(__name__)
-CORS(app)
 
-# 🔹 使用 Render 可持久存儲的檔案路徑，而不是 `/tmp/`
-DB_FILE = "filters.db"
+CORS(app, supports_credentials=True)  # ✅ 確保允許跨域請求
 
-# 🔹 建立資料表（只執行一次）
-def init_db():
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS filters (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            last_replace TEXT NOT NULL,
-            lifespan INTEGER NOT NULL
-        )
-    """)
-    conn.commit()
-    conn.close()
 
-# ✅ 讀取濾心資料
+
+# 儲存濾心資料的檔案位置（Render 通常允許 `/tmp/` 目錄）
+
+DATA_FILE = "/tmp/filters.json"
+
+
+
+DEFAULT_FILTERS = [
+
+    {"name": "前置濾網", "last_replace": "2025-05-01", "lifespan": 60},
+
+    {"name": "活性碳濾心", "last_replace": "2025-05-01", "lifespan": 90}
+
+]
+
+
+
+# 讀取濾心資料
+
 def load_filters():
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("SELECT name, last_replace, lifespan FROM filters")
-    filters = [{"name": row[0], "last_replace": row[1], "lifespan": row[2]} for row in cursor.fetchall()]
-    conn.close()
-    return filters
 
-# ✅ API: 取得濾心資料
+    try:
+
+        if os.path.exists(DATA_FILE):
+
+            with open(DATA_FILE, "r", encoding="utf-8") as f:
+
+                return json.load(f)
+
+        else:
+
+            return DEFAULT_FILTERS
+
+    except FileNotFoundError:
+
+        return DEFAULT_FILTERS
+
+
+
+# 儲存濾心資料
+
+def save_filters(filters):
+
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
+
+        json.dump(filters, f, ensure_ascii=False, indent=4)
+
+
+
+# ✅ 新增首頁路由以避免 404 錯誤
+
+@app.route("/")
+
+def home():
+
+    return jsonify({"message": "Flask 服務運行中 🚀"})
+
+
+
 @app.route("/filters", methods=["GET"])
+
 def get_filters():
-    return jsonify(load_filters())
 
-# ✅ API: 新增濾心
+    return jsonify(load_filters())
+
+
+
 @app.route("/add", methods=["POST"])
+
 def add_filter():
-    data = request.json
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO filters (name, last_replace, lifespan) VALUES (?, ?, ?)",
-                   (data["name"], data["last_replace"], int(data["lifespan"])))
-    conn.commit()
-    conn.close()
-    return jsonify({"message": "濾心已成功新增"})
 
-# ✅ API: 更新濾心
+    data = request.json
+
+    filters = load_filters()
+
+    filters.append({
+
+        "name": data["name"],
+
+        "last_replace": data["last_replace"],
+
+        "lifespan": int(data["lifespan"])
+
+    })
+
+    save_filters(filters)
+
+    return jsonify({"message": "濾心已成功新增"})
+
+
+
 @app.route("/update", methods=["POST"])
-def update_filter():
-    data = request.json
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("UPDATE filters SET last_replace = ? WHERE name = ?",
-                   (datetime.datetime.now().strftime("%Y-%m-%d"), data["name"]))
-    conn.commit()
-    conn.close()
-    return jsonify({"message": "更新成功"})
 
-# ✅ API: 刪除濾心
-@app.route("/delete", methods=["POST"])
+def update_filter():
+
+    data = request.json
+
+    filters = load_filters()
+
+    for f in filters:
+
+        if f["name"] == data["name"]:
+
+            f["last_replace"] = datetime.datetime.now().strftime("%Y-%m-%d")
+
+            save_filters(filters)
+
+            return jsonify({"message": "更新成功", "updated": f})
+
+    return jsonify({"message": "濾心未找到"}), 404
+
+
+
+from flask_cors import cross_origin
+
+
+
+@app.route("/delete", methods=["POST", "OPTIONS"])  # ✅ 確保支持 OPTIONS 預檢請求
+
+@cross_origin()
+
 def delete_filter():
-    data = request.json
-    conn = sqlite3.connect(DB_FILE)
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM filters WHERE name = ?", (data["name"],))
-    conn.commit()
-    conn.close()
-    return jsonify({"message": f"濾心 {data['name']} 已刪除"})
+
+    if request.method == "OPTIONS":  # ✅ 處理預檢請求
+
+        return jsonify({"message": "OK"}), 200
+
+    
+
+    data = request.json
+
+    filters = load_filters()
+
+    filters = [f for f in filters if f["name"] != data["name"]]
+
+    save_filters(filters)
+
+    return jsonify({"message": f"濾心 {data['name']} 已刪除"}), 200
+
+
 
 if __name__ == "__main__":
-    init_db()  # ✅ 應用啟動時執行一次，確保資料庫表格存在
-    app.run(debug=True)
+
+    app.run(debug=True)
