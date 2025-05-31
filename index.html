@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>濾心管理系統</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css" />
   <style>
     body { font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px; color: #333; }
     h1 { text-align: center; color: #34495e; }
@@ -95,6 +95,7 @@
       fetch(`${apiBaseUrl}/filters`)
         .then(response => response.json())
         .then(data => {
+          console.log("API 回傳資料:", data);  // 確保 API 正確回應
           const filterList = document.getElementById("filter-list");
           filterList.innerHTML = "";
 
@@ -110,7 +111,7 @@
 
             const tdName = document.createElement("td");
             const img = document.createElement("img");
-            img.src = getFilterImageUrl(filter.name);
+            img.src = getFilterImageUrl(filter.name.trim());  // 確保名稱匹配
             img.className = "filter-img";
             tdName.appendChild(img);
             tdName.appendChild(document.createTextNode(" " + filter.name));
@@ -131,18 +132,40 @@
         .catch(error => console.error("取得濾心資料失敗:", error));
     }
 
-    function createCell(value) {
-      const td = document.createElement("td");
-      td.textContent = value;
-      return td;
+    function addFilter() {
+      const name = document.getElementById("filter-type").value.trim();
+      const date = document.getElementById("filter-date").value;
+      const lifespan = parseInt(document.getElementById("filter-lifespan").value);
+
+      fetch(`${apiBaseUrl}/add`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, last_replace: date, lifespan })
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log("新增成功:", data);
+        fetchFilters();
+      })
+      .catch(error => console.error("新增失敗:", error));
     }
 
-    function createButton(label, action) {
-      const btn = document.createElement("button");
-      btn.textContent = label;
-      btn.onclick = action;
-      return btn;
+    function deleteFilter(filterName) {
+      fetch(`${apiBaseUrl}/delete`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: filterName })
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log("刪除成功:", data);
+        fetchFilters();
+      })
+      .catch(error => console.error("刪除失敗:", error));
     }
+
+    function createCell(value) { const td = document.createElement("td"); td.textContent = value; return td; }
+    function createButton(label, action) { const btn = document.createElement("button"); btn.textContent = label; btn.onclick = action; return btn; }
 
     document.addEventListener("DOMContentLoaded", fetchFilters);
   </script>
