@@ -62,28 +62,26 @@
     button:hover {
       background-color: #2980b9;
     }
-    /* 色彩選擇器 */
-    .color-picker {
-      border: none;
-      padding: 0;
-      width: 30px;
-      height: 30px;
-      vertical-align: middle;
-      cursor: pointer;
-    }
-    /* 操作按鈕區域 */
-    .action-buttons button {
-      margin-right: 5px;
-    }
-    .action-buttons i {
-      margin-right: 5px;
-    }
-    /* 新增列欄位撐滿 */
+    /* 確保新增列中所有欄位撐滿 */
     #new-filter-row input,
     #new-filter-row select,
     #new-filter-row button {
       width: 100%;
       box-sizing: border-box;
+    }
+    /* 小圖預覽 */
+    .filter-img {
+      width: 50px;
+      height: 50px;
+      vertical-align: middle;
+      margin-right: 10px;
+    }
+    /* 操作按鈕 */
+    .action-buttons button {
+      margin-right: 5px;
+    }
+    .action-buttons i {
+      margin-right: 5px;
     }
   </style>
 </head>
@@ -100,16 +98,16 @@
       <!-- 新增濾心的輸入列，與表頭對齊 -->
       <tr id="new-filter-row">
         <td>
-          <!-- 下拉選擇預設 5 種濾心 -->
-          <select id="filter-type">
-            <option value="UF-591">UF-591</option>
-            <option value="UF-592">UF-592</option>
-            <option value="UF-593">UF-593</option>
-            <option value="UF-504">UF-504</option>
-            <option value="UF-515">UF-515</option>
+          <!-- 下拉選擇預設五種濾心，顯示中英文 -->
+          <select id="filter-type" onchange="updateFilterImage()">
+            <option value="UF-591">UF-591 - 前置濾網</option>
+            <option value="UF-592">UF-592 - 活性碳濾心</option>
+            <option value="UF-593">UF-593 - 反滲透濾心</option>
+            <option value="UF-504">UF-504 - 超濾濾網</option>
+            <option value="UF-515">UF-515 - 微過濾濾心</option>
           </select>
-          <!-- 色彩選擇器，供使用者挑選該筆資料底色 -->
-          <input type="color" id="filter-color" class="color-picker" value="#ffffff" title="選擇底色">
+          <!-- 根據選擇自動匹配圖片 -->
+          <img id="filter-img-preview" src="https://via.placeholder.com/50?text=UF-591" alt="Filter Image" class="filter-img">
         </td>
         <td>
           <input type="date" id="filter-date" placeholder="上次更換日期">
@@ -134,10 +132,41 @@
   </table>
 
   <script>
+    // 從下拉選單的濾心類型自動取得對應的圖片 URL（使用 placeholder 範例）
+    function getFilterImageUrl(type) {
+      switch (type) {
+        case "UF-591": return "https://via.placeholder.com/50?text=UF-591";
+        case "UF-592": return "https://via.placeholder.com/50?text=UF-592";
+        case "UF-593": return "https://via.placeholder.com/50?text=UF-593";
+        case "UF-504": return "https://via.placeholder.com/50?text=UF-504";
+        case "UF-515": return "https://via.placeholder.com/50?text=UF-515";
+        default: return "https://via.placeholder.com/50";
+      }
+    }
+
+    // 取回對應中文說明（供顯示用）
+    function getFilterChineseName(type) {
+      switch (type) {
+        case "UF-591": return " - 前置濾網";
+        case "UF-592": return " - 活性碳濾心";
+        case "UF-593": return " - 反滲透濾心";
+        case "UF-504": return " - 超濾濾網";
+        case "UF-515": return " - 微過濾濾心";
+        default: return "";
+      }
+    }
+
+    // 更新新增列中預覽圖片
+    function updateFilterImage() {
+      const filterType = document.getElementById("filter-type").value;
+      const imgPreview = document.getElementById("filter-img-preview");
+      imgPreview.src = getFilterImageUrl(filterType);
+    }
+
     // 請將 apiBaseUrl 設定為你的 Flask API 網址
     const apiBaseUrl = "https://water-2hc2.onrender.com";
 
-    // 取得濾心資料，並依據每筆資料生成表格列
+    // 取得濾心資料，並動態產生表格列
     function fetchFilters() {
       fetch(`${apiBaseUrl}/filters`)
         .then(response => response.json())
@@ -145,27 +174,28 @@
           const filterList = document.getElementById("filter-list");
           filterList.innerHTML = "";
           data.forEach(filter => {
-            // 讀取後端若有設定的背景色，否則預設為白色
-            const bgColor = filter.bgColor || "#ffffff";
             const tr = document.createElement("tr");
-            tr.style.backgroundColor = bgColor;
-            
-            // 濾心名稱欄
+            // 第一欄：顯示圖片與中英文濾心名稱
             const tdName = document.createElement("td");
-            tdName.textContent = filter.name;
+            const img = document.createElement("img");
+            img.src = getFilterImageUrl(filter.name);
+            img.alt = filter.name;
+            img.className = "filter-img";
+            tdName.appendChild(img);
+            const span = document.createElement("span");
+            // 組合英文值及對應中文名稱
+            span.textContent = filter.name + getFilterChineseName(filter.name);
+            tdName.appendChild(span);
             tr.appendChild(tdName);
-            
-            // 上次更換日期
+            // 第二欄：上次更換日期
             const tdDate = document.createElement("td");
             tdDate.textContent = filter.last_replace;
             tr.appendChild(tdDate);
-            
-            // 壽命 (天)
+            // 第三欄：壽命 (天)
             const tdLifespan = document.createElement("td");
             tdLifespan.textContent = filter.lifespan;
             tr.appendChild(tdLifespan);
-            
-            // 操作欄：更新與刪除按鈕
+            // 第四欄：操作按鈕
             const tdOps = document.createElement("td");
             tdOps.className = "action-buttons";
             const btnUpdate = document.createElement("button");
@@ -174,14 +204,12 @@
               updateFilter(filter.name);
             };
             tdOps.appendChild(btnUpdate);
-            
             const btnDelete = document.createElement("button");
             btnDelete.innerHTML = '<i class="fa-solid fa-trash"></i> 刪除';
             btnDelete.onclick = function() {
               deleteFilter(filter.name);
             };
             tdOps.appendChild(btnDelete);
-            
             tr.appendChild(tdOps);
             filterList.appendChild(tr);
           });
@@ -189,34 +217,27 @@
         .catch(error => console.error("取得濾心資料失敗:", error));
     }
 
-    // 新增濾心：讀取使用者輸入的資料後呼叫後端 API 建立新資料
+    // 新增濾心：讀取使用者輸入的資料後，呼叫後端 API 建立新資料
     function addFilter() {
-      // 從下拉選單中取得預設濾心名稱
       const name = document.getElementById("filter-type").value;
       const date = document.getElementById("filter-date").value;
-      // 從下拉選單取得壽命，轉成整數
       const lifespan = parseInt(document.getElementById("filter-lifespan").value);
-      const bgColor = document.getElementById("filter-color").value;
-      
       if (!date) {
         alert("請選擇上次更換日期！");
         return;
       }
-      
       fetch(`${apiBaseUrl}/add`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name,
           last_replace: date,
-          lifespan: lifespan,
-          bgColor: bgColor
+          lifespan: lifespan
         })
       })
       .then(response => response.json())
       .then(data => {
         console.log("新增結果:", data);
-        // 清空日期選擇欄（下拉選單保留預設值）
         document.getElementById("filter-date").value = "";
         fetchFilters();
       })
@@ -238,7 +259,7 @@
       .catch(error => console.error("更新濾心失敗:", error));
     }
 
-    // 刪除濾心：根據名稱呼叫 API 刪除該筆濾心資料
+    // 刪除濾心：根據濾心名稱呼叫 API 刪除該筆資料
     function deleteFilter(filterName) {
       fetch(`${apiBaseUrl}/delete`, {
         method: "POST",
@@ -253,8 +274,11 @@
       .catch(error => console.error("刪除濾心失敗:", error));
     }
 
-    // 頁面載入時呼叫 fetchFilters 取得濾心資料列表
-    document.addEventListener("DOMContentLoaded", fetchFilters);
+    // 頁面載入時更新預覽圖片與取得濾心列表
+    document.addEventListener("DOMContentLoaded", function() {
+      updateFilterImage();
+      fetchFilters();
+    });
   </script>
 </body>
 </html>
