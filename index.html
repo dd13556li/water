@@ -140,15 +140,17 @@
   <script>
     // 根據濾心類型回傳對應的圖片路徑（相對路徑用法）
     function getFilterImageUrl(type) {
-      switch (type) {
-        case "UF-591": return "591.png";
-        case "UF-592": return "592.png";
-        case "UF-593": return "593.png";
-        case "UF-504": return "504.png";
-        case "UF-515": return "515.png";
-        default: return "placeholder.png";
-      }
-    }
+  const cleanType = type.trim().toUpperCase();
+  switch (cleanType) {
+    case "UF-591": return "591.png";
+    case "UF-592": return "592.png";
+    case "UF-593": return "593.png";
+    case "UF-504": return "504.png";
+    case "UF-515": return "515.png";
+    default: return "placeholder.png";
+  }
+}
+
 
     // 根據濾心類型回傳對應的中文名稱
     function getFilterChineseName(type) {
