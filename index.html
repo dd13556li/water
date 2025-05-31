@@ -25,7 +25,7 @@
       width: 90%;
       margin: 0 auto 20px auto;
       border-collapse: collapse;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       background-color: #fff;
     }
     th, td {
@@ -64,13 +64,13 @@
     }
     /* 建議圖片大小 */
     .filter-img {
-      width: 50px;           /* 建議寬度：50 像素 */
-      height: 50px;          /* 建議高度：50 像素 */
-      object-fit: contain;   /* 保持圖片原比例 */
-      vertical-align: middle;/* 與文字置中對齊 */
-      margin-right: 10px;    /* 與文字間隔 */
+      width: 50px;
+      height: 50px;
+      object-fit: contain;
+      vertical-align: middle;
+      margin-right: 10px;
     }
-    /* 新增列欄位填滿 */
+    /* 新增列填滿 */
     #new-filter-row input,
     #new-filter-row select,
     #new-filter-row button {
@@ -95,9 +95,10 @@
         <th>濾心名稱</th>
         <th>上次更換日期</th>
         <th>壽命 (天)</th>
+        <th>到期日期</th>
         <th>操作</th>
       </tr>
-      <!-- 新增濾心的輸入列（與表頭對齊） -->
+      <!-- 新增濾心的輸入列 -->
       <tr id="new-filter-row">
         <td>
           <!-- 提供預設五種濾心，下拉選單中包含英文及中文 -->
@@ -115,13 +116,16 @@
           <input type="date" id="filter-date" placeholder="上次更換日期">
         </td>
         <td>
-          <!-- 下拉選擇壽命：3個月、6個月、1年、2年 -->
           <select id="filter-lifespan">
             <option value="90">3個月</option>
             <option value="180">6個月</option>
             <option value="365">1年</option>
             <option value="730">2年</option>
           </select>
+        </td>
+        <td>
+          <!-- 讀取並顯示計算後的到期日期 -->
+          <input type="text" id="filter-expiration" placeholder="到期日期" disabled>
         </td>
         <td>
           <button onclick="addFilter()"><i class="fa-solid fa-plus"></i> 新增</button>
@@ -134,7 +138,7 @@
   </table>
 
   <script>
-    // 根據濾心類型回傳對應的圖片路徑，這邊採用相對路徑 (確保圖片放在與 index.html 同一資料夾)
+    // 根據濾心類型回傳對應的圖片路徑（相對路徑用法）
     function getFilterImageUrl(type) {
       switch (type) {
         case "UF-591": return "591.png";
@@ -146,7 +150,7 @@
       }
     }
 
-    // 根據濾心類型回傳對應的中文名稱（包含冒號或其他標點，可根據需求自行調整）
+    // 根據濾心類型回傳對應的中文名稱
     function getFilterChineseName(type) {
       switch (type) {
         case "UF-591": return " - 5微米PP濾芯";
@@ -165,10 +169,28 @@
       imgPreview.src = getFilterImageUrl(filterType);
     }
 
-    // 請將 apiBaseUrl 設定為你的 Flask API 網址（例如在 Render 上）
+    // 根據輸入的「上次更換日期」與「壽命 (天)」計算並更新到期日期欄位
+    function updateExpirationDate() {
+      const dateValue = document.getElementById("filter-date").value;
+      const lifespanValue = document.getElementById("filter-lifespan").value;
+      const expirationField = document.getElementById("filter-expiration");
+      if (dateValue && lifespanValue) {
+        let dt = new Date(dateValue);
+        dt.setDate(dt.getDate() + Number(lifespanValue));
+        expirationField.value = dt.toISOString().split('T')[0];
+      } else {
+        expirationField.value = "";
+      }
+    }
+
+    // 當上次更換日期或壽命變更時，更新到期日期
+    document.getElementById("filter-date").addEventListener('input', updateExpirationDate);
+    document.getElementById("filter-lifespan").addEventListener('change', updateExpirationDate);
+
+    // 設定你的 API 網址（例如：Render 上的 Flask API）
     const apiBaseUrl = "https://water-2hc2.onrender.com";
 
-    // 取得濾心資料，並動態生成表格列
+    // 取得濾心資料，並動態生成表格列（包含到期日期欄位）
     function fetchFilters() {
       fetch(`${apiBaseUrl}/filters`)
         .then(response => response.json())
@@ -177,8 +199,8 @@
           filterList.innerHTML = "";
           data.forEach(filter => {
             const tr = document.createElement("tr");
-
-            // 第一欄：顯示圖片與中英文濾心名稱
+            
+            // 第一欄：濾心名稱（圖片 + 英文/中文）
             const tdName = document.createElement("td");
             const img = document.createElement("img");
             img.src = getFilterImageUrl(filter.name);
@@ -189,7 +211,7 @@
             span.textContent = filter.name + getFilterChineseName(filter.name);
             tdName.appendChild(span);
             tr.appendChild(tdName);
-
+            
             // 第二欄：上次更換日期
             const tdDate = document.createElement("td");
             tdDate.textContent = filter.last_replace;
@@ -200,25 +222,34 @@
             tdLifespan.textContent = filter.lifespan;
             tr.appendChild(tdLifespan);
 
-            // 第四欄：操作（更新與刪除按鈕）
+            // 第四欄：到期日期，計算公式 = 上次更換日期 + 壽命天數
+            const tdExpire = document.createElement("td");
+            if (filter.last_replace && filter.lifespan) {
+              let dt = new Date(filter.last_replace);
+              dt.setDate(dt.getDate() + Number(filter.lifespan));
+              tdExpire.textContent = dt.toISOString().split('T')[0];
+            } else {
+              tdExpire.textContent = "";
+            }
+            tr.appendChild(tdExpire);
+            
+            // 第五欄：操作（更新 & 刪除按鈕）
             const tdOps = document.createElement("td");
             tdOps.className = "action-buttons";
-
             const btnUpdate = document.createElement("button");
             btnUpdate.innerHTML = '<i class="fa-solid fa-edit"></i> 更新';
             btnUpdate.onclick = function() {
               updateFilter(filter.name);
             };
             tdOps.appendChild(btnUpdate);
-
             const btnDelete = document.createElement("button");
             btnDelete.innerHTML = '<i class="fa-solid fa-trash"></i> 刪除';
             btnDelete.onclick = function() {
               deleteFilter(filter.name);
             };
             tdOps.appendChild(btnDelete);
-
             tr.appendChild(tdOps);
+            
             filterList.appendChild(tr);
           });
         })
@@ -247,6 +278,7 @@
       .then(data => {
         console.log("新增結果:", data);
         document.getElementById("filter-date").value = "";
+        document.getElementById("filter-expiration").value = "";
         fetchFilters();
       })
       .catch(error => console.error("新增濾心失敗:", error));
@@ -267,7 +299,7 @@
       .catch(error => console.error("更新濾心失敗:", error));
     }
 
-    // 刪除濾心：根據濾心名稱呼叫 API 刪除該筆資料
+    // 刪除濾心：呼叫 API 刪除該筆資料
     function deleteFilter(filterName) {
       fetch(`${apiBaseUrl}/delete`, {
         method: "POST",
@@ -282,7 +314,7 @@
       .catch(error => console.error("刪除濾心失敗:", error));
     }
 
-    // 頁面載入時更新預覽圖片並取得濾心列表
+    // 頁面載入時，更新圖片與取得濾心列表
     document.addEventListener("DOMContentLoaded", function() {
       updateFilterImage();
       fetchFilters();
