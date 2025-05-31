@@ -2,33 +2,35 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>濾心更換提醒系統</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script> <!-- ✅ Font Awesome -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>濾心管理系統</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        input, button { margin: 5px; padding: 8px; }
+        ul { list-style-type: none; padding: 0; }
+        li { background: #f4f4f4; margin: 5px; padding: 10px; border-radius: 5px; }
+    </style>
 </head>
 <body>
-    <h1>🚰 濾心更換提醒系統</h1>
-    
-    <form id="filterForm">
-        <input type="text" id="name" placeholder="濾心名稱" required>
-        <input type="date" id="lastReplace" required>
-        <input type="number" id="lifespan" placeholder="使用天數" required>
-        <button type="submit"><i class="fas fa-plus icon"></i> 新增濾心</button>
-    </form>
 
-    <table>
-        <thead>
-            <tr>
-                <th>濾心名稱</th>
-                <th>上次更換日期</th>
-                <th>下次更換日期</th>
-                <th>剩餘天數</th>
-                <th>更新</th>
-                <th>刪除</th>
-            </tr>
-        </thead>
-        <tbody id="filterTable"></tbody>
-    </table>
+    <h1>濾心管理系統</h1>
+
+    <h2>🔍 濾心列表</h2>
+    <ul id="filter-list"></ul>
+
+    <h2>➕ 新增濾心</h2>
+    <input type="text" id="filter-name" placeholder="濾心名稱">
+    <input type="date" id="filter-date" placeholder="上次更換日期">
+    <input type="number" id="filter-lifespan" placeholder="壽命 (天)">
+    <button onclick="addFilter()">新增濾心</button>
+
+    <h2>✏️ 更新濾心</h2>
+    <input type="text" id="update-name" placeholder="濾心名稱">
+    <button onclick="updateFilter()">更新更換日期</button>
+
+    <h2>🗑️ 刪除濾心</h2>
+    <input type="text" id="delete-name" placeholder="濾心名稱">
+    <button onclick="deleteFilter()">刪除濾心</button>
 
     <script src="app.js"></script>
 </body>
