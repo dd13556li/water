@@ -1,83 +1,74 @@
-// 獲取濾心資訊並更新網頁內容
-async function fetchFilters() {
-    const response = await fetch("http://127.0.0.1:5000/filters");
-    const filters = await response.json();
-    const tbody = document.getElementById("filterTable");
-    tbody.innerHTML = "";
+const apiBaseUrl = "https://water-2hc2.onrender.com"; // 設定 Flask API 伺服器
 
-    filters.forEach(filter => {
-        let lastDate = new Date(filter.last_replace);
-        let nextDate = new Date(lastDate);
-        nextDate.setDate(lastDate.getDate() + filter.lifespan);
-        let remainingDays = Math.ceil((nextDate - new Date()) / (1000 * 60 * 60 * 24));
-
-        let row = `<tr>
-            <td>${filter.name}</td>
-            <td>${filter.last_replace}</td>
-            <td>${nextDate.toISOString().split('T')[0]}</td>
-            <td class="${remainingDays <= 7 ? 'low-days' : ''}">${remainingDays}</td>
-            <td><button onclick="updateFilter('${filter.name}')"><i class="fas fa-sync-alt icon"></i> 更新</button></td>
-            <td><button onclick="confirmDelete('${filter.name}')"><i class="fas fa-trash-alt icon"></i> 刪除</button></td>
-        </tr>`;
-        tbody.innerHTML += row;
-    });
+// ✅ 取得濾心資料並顯示在網頁上
+function fetchFilters() {
+    fetch(`${apiBaseUrl}/filters`)
+        .then(response => response.json())
+        .then(data => {
+            console.log("濾心資料:", data);
+            const filterList = document.getElementById("filter-list");
+            filterList.innerHTML = "";
+            data.forEach(filter => {
+                const listItem = document.createElement("li");
+                listItem.innerText = `${filter.name} - 上次更換: ${filter.last_replace} - 壽命: ${filter.lifespan} 天`;
+                filterList.appendChild(listItem);
+            });
+        })
+        .catch(error => console.error("API 錯誤:", error));
 }
 
+// ✅ 新增濾心
+function addFilter() {
+    const name = document.getElementById("filter-name").value;
+    const lastReplace = document.getElementById("filter-date").value;
+    const lifespan = document.getElementById("filter-lifespan").value;
 
-// 新增濾心
-document.getElementById("filterForm").addEventListener("submit", async function(event) {
-    event.preventDefault();
-    
-    const name = document.getElementById("name").value;
-    const lastReplace = document.getElementById("lastReplace").value;
-    const lifespan = document.getElementById("lifespan").value;
-
-    await fetch("http://127.0.0.1:5000/add", {
+    fetch(`${apiBaseUrl}/add`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, last_replace: lastReplace, lifespan })
-    });
+        body: JSON.stringify({ name, last_replace: lastReplace, lifespan: parseInt(lifespan) })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("新增結果:", data);
+        fetchFilters(); // 更新濾心列表
+    })
+    .catch(error => console.error("API 錯誤:", error));
+}
 
-    alert("濾心已新增！");
-    fetchFilters();
-});
+// ✅ 更新濾心的更換日期（設為今天）
+function updateFilter() {
+    const name = document.getElementById("update-name").value;
 
-// 更新濾心更換日期
-async function updateFilter(name) {
-    await fetch("http://127.0.0.1:5000/update", {
+    fetch(`${apiBaseUrl}/update`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name })
-    });
-    alert("濾心已更新！");
-    fetchFilters();
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("更新結果:", data);
+        fetchFilters(); // 更新濾心列表
+    })
+    .catch(error => console.error("API 錯誤:", error));
 }
 
-// 執行刪除濾心
-async function deleteFilter(name) {
-    await fetch("http://127.0.0.1:5000/delete", {
+// ✅ 刪除濾心
+function deleteFilter() {
+    const name = document.getElementById("delete-name").value;
+
+    fetch(`${apiBaseUrl}/delete`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name })
-    });
-
-    alert(`已刪除濾心：${name}`);
-    fetchFilters(); // 重新載入濾心清單
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("刪除結果:", data);
+        fetchFilters(); // 更新濾心列表
+    })
+    .catch(error => console.error("API 錯誤:", error));
 }
 
-// 確認是否刪除濾心
-function confirmDelete(name) {
-    if (confirm(`確定要刪除 ${name} 嗎？`)) {
-        deleteFilter(name);
-    }
-}
-
-// 確認是否刪除濾心
-function confirmDelete(name) {
-    if (confirm(`確定要刪除 ${name} 嗎？`)) {
-        deleteFilter(name);
-    }
-}
-
-// 當頁面載入時，獲取濾心資訊
+// ✅ 頁面載入時，先獲取濾心列表
 document.addEventListener("DOMContentLoaded", fetchFilters);
