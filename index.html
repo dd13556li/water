@@ -52,7 +52,7 @@
       </tr>
     </thead>
     <tbody id="filter-list">
-      <!-- 後端取得的濾心資料將動態插入 -->
+      <!-- 濾心資料動態插入 -->
     </tbody>
   </table>
 
@@ -67,7 +67,7 @@
         "UF-593": "593.png",
         "UF-504": "504.png",
         "UF-515": "515.png"
-      }[cleanType] || "placeholder.png";
+      }[cleanType] || "default.png";  // 設定預設圖片
     }
 
     function updateFilterImage() {
@@ -75,27 +75,11 @@
       document.getElementById("filter-img-preview").src = getFilterImageUrl(filterType);
     }
 
-    function updateExpirationDate() {
-      const dateValue = document.getElementById("filter-date").value;
-      const lifespanValue = document.getElementById("filter-lifespan").value;
-      const expirationField = document.getElementById("filter-expiration");
-      if (dateValue && lifespanValue) {
-        let dt = new Date(dateValue);
-        dt.setDate(dt.getDate() + Number(lifespanValue));
-        expirationField.value = dt.toISOString().split('T')[0];
-      } else {
-        expirationField.value = "";
-      }
-    }
-
-    document.getElementById("filter-date").addEventListener('input', updateExpirationDate);
-    document.getElementById("filter-lifespan").addEventListener('change', updateExpirationDate);
-
     function fetchFilters() {
       fetch(`${apiBaseUrl}/filters`)
         .then(response => response.json())
         .then(data => {
-          console.log("API 回傳資料:", data);  // 確保 API 正確回應
+          console.log("API 回傳資料:", data);
           const filterList = document.getElementById("filter-list");
           filterList.innerHTML = "";
 
@@ -111,14 +95,14 @@
 
             const tdName = document.createElement("td");
             const img = document.createElement("img");
-            img.src = getFilterImageUrl(filter.name.trim());  // 確保名稱匹配
+            img.src = getFilterImageUrl(filter.name.trim());
             img.className = "filter-img";
             tdName.appendChild(img);
             tdName.appendChild(document.createTextNode(" " + filter.name));
             tr.appendChild(tdName);
 
             tr.appendChild(createCell(filter.last_replace));
-            tr.appendChild(createCell(`${remainingDays} 天`));
+            tr.appendChild(createCell(`${remainingDays} 天`));  // 剩餘壽命
             tr.appendChild(createCell(expirationDate.toISOString().split('T')[0]));
 
             const tdOps = document.createElement("td");
@@ -137,31 +121,24 @@
       const date = document.getElementById("filter-date").value;
       const lifespan = parseInt(document.getElementById("filter-lifespan").value);
 
-      fetch(`${apiBaseUrl}/add`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, last_replace: date, lifespan })
-      })
-      .then(response => response.json())
-      .then(data => {
-        console.log("新增成功:", data);
-        fetchFilters();
-      })
-      .catch(error => console.error("新增失敗:", error));
+      fetch(`${apiBaseUrl}/add`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, last_replace: date, lifespan }) })
+        .then(response => response.json())
+        .then(() => fetchFilters())
+        .catch(error => console.error("新增失敗:", error));
+    }
+
+    function updateFilter(filterName) {
+      fetch(`${apiBaseUrl}/update`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: filterName }) })
+        .then(response => response.json())
+        .then(() => fetchFilters())
+        .catch(error => console.error("更新失敗:", error));
     }
 
     function deleteFilter(filterName) {
-      fetch(`${apiBaseUrl}/delete`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: filterName })
-      })
-      .then(response => response.json())
-      .then(data => {
-        console.log("刪除成功:", data);
-        fetchFilters();
-      })
-      .catch(error => console.error("刪除失敗:", error));
+      fetch(`${apiBaseUrl}/delete`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: filterName }) })
+        .then(response => response.json())
+        .then(() => fetchFilters())
+        .catch(error => console.error("刪除失敗:", error));
     }
 
     function createCell(value) { const td = document.createElement("td"); td.textContent = value; return td; }
