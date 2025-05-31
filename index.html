@@ -6,31 +6,40 @@
     <title>濾心管理系統</title>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; }
+        table { width: 80%; margin: 0 auto; border-collapse: collapse; }
+        th, td { padding: 10px; border: 1px solid #ddd; }
+        th { background: #f4f4f4; }
         input, button { margin: 5px; padding: 8px; }
-        ul { list-style-type: none; padding: 0; }
-        li { background: #f4f4f4; margin: 5px; padding: 10px; border-radius: 5px; }
     </style>
 </head>
 <body>
 
     <h1>濾心管理系統</h1>
 
-    <h2>🔍 濾心列表</h2>
-    <ul id="filter-list"></ul>
-
     <h2>➕ 新增濾心</h2>
-    <input type="text" id="filter-name" placeholder="濾心名稱">
-    <input type="date" id="filter-date" placeholder="上次更換日期">
-    <input type="number" id="filter-lifespan" placeholder="壽命 (天)">
-    <button onclick="addFilter()">新增濾心</button>
+    <table>
+        <tr>
+            <td><input type="text" id="filter-name" placeholder="濾心名稱"></td>
+            <td><input type="date" id="filter-date" placeholder="上次更換日期"></td>
+            <td><input type="number" id="filter-lifespan" placeholder="壽命 (天)"></td>
+            <td><button onclick="addFilter()">新增濾心</button></td>
+        </tr>
+    </table>
 
-    <h2>✏️ 更新濾心</h2>
-    <input type="text" id="update-name" placeholder="濾心名稱">
-    <button onclick="updateFilter()">更新更換日期</button>
-
-    <h2>🗑️ 刪除濾心</h2>
-    <input type="text" id="delete-name" placeholder="濾心名稱">
-    <button onclick="deleteFilter()">刪除濾心</button>
+    <h2>🔍 濾心列表</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>濾心名稱</th>
+                <th>上次更換日期</th>
+                <th>壽命 (天)</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody id="filter-list">
+            <!-- JavaScript 會動態插入濾心資料 -->
+        </tbody>
+    </table>
 
     <script src="app.js"></script>
 </body>
