@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>濾心管理系統</title>
-  <!-- 引入 Font Awesome CDN，供圖示使用 -->
+  <!-- 引入 Font Awesome CDN (圖示) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
   <style>
     /* 整體版面 */
@@ -18,6 +18,7 @@
     h1 {
       color: #34495e;
       margin-bottom: 20px;
+      text-align: center;
     }
     /* 表格設定 */
     table {
@@ -40,14 +41,15 @@
     tbody tr:hover {
       background-color: #f1f1f1;
     }
-    /* 輸入框與按鈕 */
-    input, button {
+    /* 輸入框、下拉選單與按鈕 */
+    input, select, button {
       margin: 5px;
       padding: 8px;
       border: 1px solid #ccc;
       border-radius: 4px;
+      font-size: 1em;
     }
-    input:focus, button:focus {
+    input:focus, select:focus, button:focus {
       outline: none;
       border-color: #3498db;
     }
@@ -76,8 +78,9 @@
     .action-buttons i {
       margin-right: 5px;
     }
-    /* 確保新增列中所有欄位寬度滿版 */
+    /* 新增列欄位撐滿 */
     #new-filter-row input,
+    #new-filter-row select,
     #new-filter-row button {
       width: 100%;
       box-sizing: border-box;
@@ -94,17 +97,31 @@
         <th>壽命 (天)</th>
         <th>操作</th>
       </tr>
-      <!-- 新增濾心的輸入列 -->
+      <!-- 新增濾心的輸入列，與表頭對齊 -->
       <tr id="new-filter-row">
         <td>
-          <input type="text" id="filter-name" placeholder="濾心名稱">
+          <!-- 下拉選擇預設 5 種濾心 -->
+          <select id="filter-type">
+            <option value="UF-591">UF-591</option>
+            <option value="UF-592">UF-592</option>
+            <option value="UF-593">UF-593</option>
+            <option value="UF-504">UF-504</option>
+            <option value="UF-515">UF-515</option>
+          </select>
+          <!-- 色彩選擇器，供使用者挑選該筆資料底色 -->
           <input type="color" id="filter-color" class="color-picker" value="#ffffff" title="選擇底色">
         </td>
         <td>
           <input type="date" id="filter-date" placeholder="上次更換日期">
         </td>
         <td>
-          <input type="number" id="filter-lifespan" placeholder="壽命 (天)">
+          <!-- 下拉選擇壽命：3個月、6個月、1年、2年 -->
+          <select id="filter-lifespan">
+            <option value="90">3個月</option>
+            <option value="180">6個月</option>
+            <option value="365">1年</option>
+            <option value="730">2年</option>
+          </select>
         </td>
         <td>
           <button onclick="addFilter()"><i class="fa-solid fa-plus"></i> 新增</button>
@@ -148,7 +165,7 @@
             tdLifespan.textContent = filter.lifespan;
             tr.appendChild(tdLifespan);
             
-            // 操作欄：更新 & 刪除按鈕
+            // 操作欄：更新與刪除按鈕
             const tdOps = document.createElement("td");
             tdOps.className = "action-buttons";
             const btnUpdate = document.createElement("button");
@@ -174,13 +191,15 @@
 
     // 新增濾心：讀取使用者輸入的資料後呼叫後端 API 建立新資料
     function addFilter() {
-      const name = document.getElementById("filter-name").value;
+      // 從下拉選單中取得預設濾心名稱
+      const name = document.getElementById("filter-type").value;
       const date = document.getElementById("filter-date").value;
-      const lifespan = document.getElementById("filter-lifespan").value;
+      // 從下拉選單取得壽命，轉成整數
+      const lifespan = parseInt(document.getElementById("filter-lifespan").value);
       const bgColor = document.getElementById("filter-color").value;
       
-      if (!name || !date || !lifespan) {
-        alert("請填寫所有欄位！");
+      if (!date) {
+        alert("請選擇上次更換日期！");
         return;
       }
       
@@ -190,18 +209,15 @@
         body: JSON.stringify({
           name: name,
           last_replace: date,
-          lifespan: parseInt(lifespan),
+          lifespan: lifespan,
           bgColor: bgColor
         })
       })
       .then(response => response.json())
       .then(data => {
         console.log("新增結果:", data);
-        // 清空輸入欄位
-        document.getElementById("filter-name").value = "";
+        // 清空日期選擇欄（下拉選單保留預設值）
         document.getElementById("filter-date").value = "";
-        document.getElementById("filter-lifespan").value = "";
-        document.getElementById("filter-color").value = "#ffffff";
         fetchFilters();
       })
       .catch(error => console.error("新增濾心失敗:", error));
