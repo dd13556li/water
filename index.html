@@ -1,46 +1,197 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>濾心管理系統</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; }
-        table { width: 80%; margin: 0 auto; border-collapse: collapse; }
-        th, td { padding: 10px; border: 1px solid #ddd; }
-        th { background: #f4f4f4; }
-        input, button { margin: 5px; padding: 8px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>濾心管理系統</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 20px;
+    }
+    table {
+      width: 80%;
+      margin: 0 auto 20px auto;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: center;
+    }
+    th {
+      background-color: #f4f4f4;
+    }
+    input, button {
+      margin: 5px;
+      padding: 8px;
+    }
+    /* 小型色彩選擇器樣式 */
+    .color-picker {
+      border: none;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      vertical-align: middle;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
+  <h1>濾心管理系統</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>濾心名稱</th>
+        <th>上次更換日期</th>
+        <th>壽命 (天)</th>
+        <th>操作</th>
+      </tr>
+      <!-- 新增濾心的輸入列（與表頭對齊） -->
+      <tr id="new-filter-row">
+        <td>
+          <input type="text" id="filter-name" placeholder="濾心名稱">
+          <input type="color" id="filter-color" class="color-picker" value="#ffffff" title="選擇底色">
+        </td>
+        <td>
+          <input type="date" id="filter-date" placeholder="上次更換日期">
+        </td>
+        <td>
+          <input type="number" id="filter-lifespan" placeholder="壽命 (天)">
+        </td>
+        <td>
+          <button onclick="addFilter()">新增</button>
+        </td>
+      </tr>
+    </thead>
+    <tbody id="filter-list">
+      <!-- 後端取得的濾心資料列會動態插入至此 -->
+    </tbody>
+  </table>
 
-    <h1>濾心管理系統</h1>
+  <script>
+    // 請將 apiBaseUrl 改為你的 Flask API 網址
+    const apiBaseUrl = "https://water-2hc2.onrender.com";
 
-    <h2>➕ 新增濾心</h2>
-    <table>
-        <tr>
-            <td><input type="text" id="filter-name" placeholder="濾心名稱"></td>
-            <td><input type="date" id="filter-date" placeholder="上次更換日期"></td>
-            <td><input type="number" id="filter-lifespan" placeholder="壽命 (天)"></td>
-            <td><button onclick="addFilter()">新增濾心</button></td>
-        </tr>
-    </table>
+    // 取得濾心資料，並依照每筆資料生成表格列
+    function fetchFilters() {
+      fetch(`${apiBaseUrl}/filters`)
+        .then(response => response.json())
+        .then(data => {
+          const filterList = document.getElementById("filter-list");
+          filterList.innerHTML = "";
+          data.forEach(filter => {
+            // 如果後端有儲存 bgColor，則使用，否則預設白色
+            const bgColor = filter.bgColor || "#ffffff";
+            const tr = document.createElement("tr");
+            tr.style.backgroundColor = bgColor;
+            
+            // 濾心名稱
+            const tdName = document.createElement("td");
+            tdName.textContent = filter.name;
+            tr.appendChild(tdName);
+            
+            // 上次更換日期
+            const tdDate = document.createElement("td");
+            tdDate.textContent = filter.last_replace;
+            tr.appendChild(tdDate);
+            
+            // 壽命 (天)
+            const tdLifespan = document.createElement("td");
+            tdLifespan.textContent = filter.lifespan;
+            tr.appendChild(tdLifespan);
+            
+            // 操作：更新與刪除按鈕
+            const tdOps = document.createElement("td");
+            const btnUpdate = document.createElement("button");
+            btnUpdate.textContent = "更新";
+            btnUpdate.onclick = function() {
+              updateFilter(filter.name);
+            };
+            tdOps.appendChild(btnUpdate);
+            
+            const btnDelete = document.createElement("button");
+            btnDelete.textContent = "刪除";
+            btnDelete.onclick = function() {
+              deleteFilter(filter.name);
+            };
+            tdOps.appendChild(btnDelete);
+            
+            tr.appendChild(tdOps);
+            filterList.appendChild(tr);
+          });
+        })
+        .catch(error => console.error("取得濾心資料失敗:", error));
+    }
 
-    <h2>🔍 濾心列表</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>濾心名稱</th>
-                <th>上次更換日期</th>
-                <th>壽命 (天)</th>
-                <th>操作</th>
-            </tr>
-        </thead>
-        <tbody id="filter-list">
-            <!-- JavaScript 會動態插入濾心資料 -->
-        </tbody>
-    </table>
+    // 新增濾心：讀取輸入欄位，包含 bgColor 值，送到後端建立新濾心
+    function addFilter() {
+      const name = document.getElementById("filter-name").value;
+      const date = document.getElementById("filter-date").value;
+      const lifespan = document.getElementById("filter-lifespan").value;
+      const bgColor = document.getElementById("filter-color").value;
+      
+      if (!name || !date || !lifespan) {
+        alert("請填寫所有欄位！");
+        return;
+      }
+      
+      fetch(`${apiBaseUrl}/add`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name,
+          last_replace: date,
+          lifespan: parseInt(lifespan),
+          bgColor: bgColor   // 傳送使用者選擇的顏色（若後端有處理則可保存）
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log("新增結果:", data);
+        // 清空輸入欄位（可以依需求保留色彩選擇）
+        document.getElementById("filter-name").value = "";
+        document.getElementById("filter-date").value = "";
+        document.getElementById("filter-lifespan").value = "";
+        document.getElementById("filter-color").value = "#ffffff";
+        fetchFilters();
+      })
+      .catch(error => console.error("新增濾心失敗:", error));
+    }
 
-    <script src="app.js"></script>
+    // 更新濾心：簡單呼叫更新 API 以設定最新換新日期
+    function updateFilter(filterName) {
+      fetch(`${apiBaseUrl}/update`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: filterName })
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log("更新結果:", data);
+        fetchFilters();
+      })
+      .catch(error => console.error("更新濾心失敗:", error));
+    }
+
+    // 刪除濾心：呼叫刪除 API，傳送要刪除的濾心名稱
+    function deleteFilter(filterName) {
+      fetch(`${apiBaseUrl}/delete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: filterName })
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log("刪除結果:", data);
+        fetchFilters();
+      })
+      .catch(error => console.error("刪除濾心失敗:", error));
+    }
+
+    // 頁面載入時，取得濾心列表
+    document.addEventListener("DOMContentLoaded", fetchFilters);
+  </script>
 </body>
 </html>
