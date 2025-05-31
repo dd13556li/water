@@ -102,13 +102,13 @@
         <td>
           <!-- 提供預設五種濾心，下拉選單中包含英文及中文 -->
           <select id="filter-type" onchange="updateFilterImage()">
-            <option value="UF-591">UF-591 - 前置濾網</option>
-            <option value="UF-592">UF-592 - 活性碳濾心</option>
-            <option value="UF-593">UF-593 - 反滲透濾心</option>
-            <option value="UF-504">UF-504 - 超濾濾網</option>
-            <option value="UF-515">UF-515 - 微過濾濾心</option>
+            <option value="UF-591">UF-591 - 5微米PP濾芯</option>
+            <option value="UF-592">UF-592 - 塊狀活性碳濾芯</option>
+            <option value="UF-593">UF-593 - 1微米PP濾芯</option>
+            <option value="UF-504">UF-504 - 逆滲透薄膜</option>
+            <option value="UF-515">UF-515 - 椰殼顆粒活性碳濾芯</option>
           </select>
-          <!-- 根據選擇自動匹配圖片，圖片與 index.html 同一資料夾 -->
+          <!-- 根據選擇自動匹配圖片，圖片必須與 index.html 位於同一資料夾 -->
           <img id="filter-img-preview" src="591.png" alt="Filter Image" class="filter-img">
         </td>
         <td>
@@ -134,7 +134,7 @@
   </table>
 
   <script>
-    // 根據濾心類型回傳對應的圖片路徑（使用相對路徑）
+    // 根據濾心類型回傳對應的圖片路徑，這邊採用相對路徑 (確保圖片放在與 index.html 同一資料夾)
     function getFilterImageUrl(type) {
       switch (type) {
         case "UF-591": return "591.png";
@@ -146,14 +146,14 @@
       }
     }
 
-    // 根據濾心類型回傳對應的中文名稱
+    // 根據濾心類型回傳對應的中文名稱（包含冒號或其他標點，可根據需求自行調整）
     function getFilterChineseName(type) {
       switch (type) {
-        case "UF-591": return " - 前置濾網";
-        case "UF-592": return " - 活性碳濾心";
-        case "UF-593": return " - 反滲透濾心";
-        case "UF-504": return " - 超濾濾網";
-        case "UF-515": return " - 微過濾濾心";
+        case "UF-591": return " - 5微米PP濾芯";
+        case "UF-592": return " - 塊狀活性碳濾芯";
+        case "UF-593": return " - 1微米PP濾芯";
+        case "UF-504": return " - 逆滲透薄膜";
+        case "UF-515": return " - 椰殼顆粒活性碳濾芯";
         default: return "";
       }
     }
