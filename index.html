@@ -6,30 +6,141 @@
   <title>濾心管理系統</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css" />
   <style>
-    body { font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px; color: #333; }
-    h1 { text-align: center; color: #34495e; }
-    table { width: 90%; margin: auto; border-collapse: collapse; box-shadow: 0 2px 8px rgba(0,0,0,0.1); background-color: #fff; }
-    th, td { padding: 12px 15px; border: 1px solid #eaeaea; text-align: center; }
-    thead th { background-color: #3498db; color: #fff; font-size: 1.1em; }
-    .filter-img { width: 50px; height: 50px; object-fit: contain; margin-right: 10px; }
-    button { background-color: #3498db; color: #fff; padding: 8px; border: none; cursor: pointer; }
+    body { 
+      font-family: 'Segoe UI', 'Roboto', Arial, sans-serif; 
+      background-color: #f0f2f5; 
+      padding: 20px; 
+      color: #333; 
+      line-height: 1.6;
+    }
+    h1 { 
+      text-align: center; 
+      color: #2c3e50; 
+      margin-bottom: 30px;
+    }
+    h1 .fas {
+      margin-right: 10px;
+      color: #3498db;
+    }
+    table { 
+      width: 95%; 
+      margin: auto; 
+      border-collapse: collapse; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+      background-color: #fff; 
+      border-radius: 8px;
+      overflow: hidden; /* For border-radius to apply to th/td */
+    }
+    th, td { 
+      padding: 15px 18px; 
+      border-bottom: 1px solid #ecf0f1; 
+      text-align: center; 
+      vertical-align: middle;
+    }
+    thead th { 
+      background-color: #3498db; 
+      color: #fff; 
+      font-size: 1.1em;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    /* Remove border from last row of td in tbody */
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .filter-img { 
+      width: 50px; 
+      height: 50px; 
+      object-fit: contain; 
+      margin-right: 10px; 
+      vertical-align: middle;
+      border-radius: 4px;
+      background-color: #f8f9fa;
+      padding: 3px;
+      border: 1px solid #dee2e6;
+    }
+    #filter-img-preview {
+        margin-left: 10px; /* Add some space next to select */
+    }
+
+    button { 
+      background-color: #3498db; 
+      color: #fff; 
+      padding: 10px 15px; 
+      border: none; 
+      cursor: pointer; 
+      border-radius: 5px;
+      font-size: 0.9em;
+      transition: background-color 0.3s ease, transform 0.2s ease;
+      margin: 0 5px; /* Add some space between buttons */
+    }
+    button:hover { 
+      background-color: #2980b9;
+      transform: translateY(-1px);
+    }
+    button .fas {
+      margin-right: 8px;
+    }
+    #new-filter-row button {
+      background-color: #2ecc71; /* Green for add */
+    }
+    #new-filter-row button:hover {
+      background-color: #27ae60;
+    }
+    .btn-update { background-color: #f39c12; /* Orange for update */ }
+    .btn-update:hover { background-color: #e67e22; }
+    .btn-delete { background-color: #e74c3c; /* Red for delete */ }
+    .btn-delete:hover { background-color: #c0392b; }
+
+    select, input[type="date"], input[type="text"] {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-size: 0.95em;
+      min-width: 150px;
+    }
+    #new-filter-row td {
+      vertical-align: middle;
+    }
+    #new-filter-row td > * { /* Direct children of td in add row */
+        margin-right: 5px;
+    }
+    #new-filter-row td > *:last-child {
+        margin-right: 0;
+    }
+
+
+    /* Row status colors */
+    .status-warning td {
+      background-color: #fffbe6 !important; /* Light yellow */
+      color: #8a6d3b;
+    }
+    .status-expired td {
+      background-color: #fdecea !important; /* Light red */
+      color: #a94442;
+    }
+    .status-expired .remaining-days, .status-warning .remaining-days {
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
-  <h1>濾心管理系統</h1>
+  <h1><i class="fas fa-filter"></i>濾心管理系統</h1>
 
   <table>
     <thead>
       <tr>
         <th>濾心名稱</th>
         <th>上次更換日期</th>
-        <th>剩餘壽命 (天)</th>
+        <th>剩餘壽命</th>
         <th>到期日期</th>
         <th>操作</th>
       </tr>
       <tr id="new-filter-row">
         <td>
-          <select id="filter-type" onchange="updateFilterImage()">
+          <select id="filter-type" onchange="updateFilterImagePreview(); updateNewFilterExpirationPreview();">
             <option value="UF-591">UF-591 - 5微米PP濾芯</option>
             <option value="UF-592">UF-592 - 塊狀活性碳濾芯</option>
             <option value="UF-593">UF-593 - 1微米PP濾芯</option>
@@ -38,42 +149,74 @@
           </select>
           <img id="filter-img-preview" src="591.png" alt="Filter Image" class="filter-img">
         </td>
-        <td><input type="date" id="filter-date"></td>
+        <td><input type="date" id="filter-date" onchange="updateNewFilterExpirationPreview()"></td>
         <td>
-          <select id="filter-lifespan">
+          <select id="filter-lifespan" onchange="updateNewFilterExpirationPreview()">
             <option value="90">3個月</option>
             <option value="180">6個月</option>
             <option value="365">1年</option>
             <option value="730">2年</option>
           </select>
         </td>
-        <td><input type="text" id="filter-expiration" disabled></td>
-        <td><button onclick="addFilter()">新增</button></td>
+        <td><input type="text" id="filter-expiration" disabled placeholder="自動計算"></td>
+        <td><button onclick="addFilter()"><i class="fas fa-plus-circle"></i>新增</button></td>
       </tr>
     </thead>
     <tbody id="filter-list">
-      <!-- 濾心資料動態插入 -->
-    </tbody>
+      </tbody>
   </table>
 
   <script>
     const apiBaseUrl = "https://water-2hc2.onrender.com";
 
-    function getFilterImageUrl(type) {
-      const cleanType = type.trim().toUpperCase();
-      return {
-        "UF-591": "591.png",
-        "UF-592": "592.png",
-        "UF-593": "593.png",
-        "UF-504": "504.png",
-        "UF-515": "515.png"
-      }[cleanType] || "default.png";  // 設定預設圖片
+    const filterDetails = {
+      "UF-591": { name: "UF-591 - 5微米PP濾芯", img: "591.png" },
+      "UF-592": { name: "UF-592 - 塊狀活性碳濾芯", img: "592.png" },
+      "UF-593": { name: "UF-593 - 1微米PP濾芯", img: "593.png" },
+      "UF-504": { name: "UF-504 - 逆滲透薄膜", img: "504.png" },
+      "UF-515": { name: "UF-515 - 椰殼顆粒活性碳濾芯", img: "515.png" }
+    };
+
+    function getFilterImageUrl(modelNumber) {
+      const model = modelNumber.trim().toUpperCase();
+      return (filterDetails[model] && filterDetails[model].img) || "default.png";
     }
 
-    function updateFilterImage() {
+    function getFilterDisplayName(modelNumber) {
+      const model = modelNumber.trim().toUpperCase();
+      return (filterDetails[model] && filterDetails[model].name) || modelNumber;
+    }
+
+    function updateFilterImagePreview() {
       const filterType = document.getElementById("filter-type").value;
       document.getElementById("filter-img-preview").src = getFilterImageUrl(filterType);
     }
+    
+    function updateNewFilterExpirationPreview() {
+        const dateInput = document.getElementById("filter-date");
+        const lifespanSelect = document.getElementById("filter-lifespan");
+        const expirationInput = document.getElementById("filter-expiration");
+
+        if (dateInput.value && lifespanSelect.value) {
+            try {
+                let lastReplaceDate = new Date(dateInput.value + "T00:00:00"); // Ensure parsing as local date
+                if (isNaN(lastReplaceDate.getTime())) {
+                    expirationInput.value = "日期無效";
+                    return;
+                }
+                let lifespanDays = parseInt(lifespanSelect.value);
+                let expirationDate = new Date(lastReplaceDate);
+                expirationDate.setDate(lastReplaceDate.getDate() + lifespanDays);
+                expirationInput.value = expirationDate.toISOString().split('T')[0];
+            } catch (e) {
+                expirationInput.value = "計算錯誤";
+                console.error("Error calculating expiration date:", e);
+            }
+        } else {
+            expirationInput.value = "";
+        }
+    }
+
 
     function fetchFilters() {
       fetch(`${apiBaseUrl}/filters`)
@@ -86,28 +229,44 @@
           data.forEach(filter => {
             const tr = document.createElement("tr");
 
-            let lastReplaceDate = new Date(filter.last_replace);
+            let lastReplaceDate = new Date(filter.last_replace + "T00:00:00"); // Assume date string from API is YYYY-MM-DD
             let expirationDate = new Date(lastReplaceDate);
             expirationDate.setDate(lastReplaceDate.getDate() + Number(filter.lifespan));
 
             let today = new Date();
-            let remainingDays = Math.max(0, Math.ceil((expirationDate - today) / (1000 * 60 * 60 * 24)));
+            today.setHours(0,0,0,0); // Normalize today to start of day for accurate comparison
+            
+            let remainingDays = Math.ceil((expirationDate - today) / (1000 * 60 * 60 * 24));
+            remainingDays = Math.max(0, remainingDays); // Don't show negative days, show 0 if past due.
+
+            if (remainingDays <= 0) {
+              tr.classList.add("status-expired");
+            } else if (remainingDays < 30) {
+              tr.classList.add("status-warning");
+            }
 
             const tdName = document.createElement("td");
             const img = document.createElement("img");
-            img.src = getFilterImageUrl(filter.name.trim());
+            // filter.name from API is expected to be the model number, e.g., "UF-591"
+            img.src = getFilterImageUrl(filter.name.trim()); 
+            img.alt = getFilterDisplayName(filter.name.trim());
             img.className = "filter-img";
             tdName.appendChild(img);
-            tdName.appendChild(document.createTextNode(" " + filter.name));
+            tdName.appendChild(document.createTextNode(" " + getFilterDisplayName(filter.name.trim())));
             tr.appendChild(tdName);
 
             tr.appendChild(createCell(filter.last_replace));
-            tr.appendChild(createCell(`${remainingDays} 天`));  // 剩餘壽命
+            
+            const remainingDaysCell = createCell(`${remainingDays} 天`);
+            remainingDaysCell.classList.add("remaining-days");
+            tr.appendChild(remainingDaysCell);
+            
             tr.appendChild(createCell(expirationDate.toISOString().split('T')[0]));
 
             const tdOps = document.createElement("td");
-            tdOps.appendChild(createButton("更新", () => updateFilter(filter.name)));
-            tdOps.appendChild(createButton("刪除", () => deleteFilter(filter.name)));
+            // The filter.name here is the model ID, which is what the backend expects
+            tdOps.appendChild(createButtonWithIcon("更新", "fas fa-sync-alt", () => updateFilter(filter.name), "btn-update"));
+            tdOps.appendChild(createButtonWithIcon("刪除", "fas fa-trash-alt", () => deleteFilter(filter.name), "btn-delete"));
             tr.appendChild(tdOps);
 
             filterList.appendChild(tr);
@@ -117,34 +276,112 @@
     }
 
     function addFilter() {
-      const name = document.getElementById("filter-type").value.trim();
+      // Send the model number (value) as name to the backend
+      const name = document.getElementById("filter-type").value.trim(); 
       const date = document.getElementById("filter-date").value;
       const lifespan = parseInt(document.getElementById("filter-lifespan").value);
 
-      fetch(`${apiBaseUrl}/add`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, last_replace: date, lifespan }) })
-        .then(response => response.json())
-        .then(() => fetchFilters())
+      if (!date) {
+        alert("請選擇上次更換日期！");
+        return;
+      }
+      if (!name) {
+        alert("請選擇濾心類型！");
+        return;
+      }
+
+      fetch(`${apiBaseUrl}/add`, { 
+        method: "POST", 
+        headers: { "Content-Type": "application/json" }, 
+        body: JSON.stringify({ name, last_replace: date, lifespan }) 
+      })
+        .then(response => {
+          if (!response.ok) { throw new Error(`HTTP error! status: ${response.status}`); }
+          return response.json();
+        })
+        .then(() => {
+          fetchFilters();
+          // Clear input fields after successful add
+          document.getElementById("filter-date").value = "";
+          document.getElementById("filter-expiration").value = "";
+          // Optionally reset filter type and lifespan to defaults
+          // document.getElementById("filter-type").selectedIndex = 0;
+          // document.getElementById("filter-lifespan").selectedIndex = 0;
+          // updateFilterImagePreview(); // if type is reset
+        })
         .catch(error => console.error("新增失敗:", error));
     }
 
-    function updateFilter(filterName) {
-      fetch(`${apiBaseUrl}/update`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: filterName }) })
-        .then(response => response.json())
+    function updateFilter(filterModelName) { // filterModelName is the ID like "UF-591"
+      if (!confirm(`確定要更新濾心 "${getFilterDisplayName(filterModelName)}" 的更換日期為今天嗎？`)) {
+        return;
+      }
+      fetch(`${apiBaseUrl}/update`, { 
+        method: "POST", 
+        headers: { "Content-Type": "application/json" }, 
+        // Backend should set last_replace to today for this filter name
+        body: JSON.stringify({ name: filterModelName }) 
+      })
+        .then(response => {
+          if (!response.ok) { throw new Error(`HTTP error! status: ${response.status}`); }
+          return response.json();
+        })
         .then(() => fetchFilters())
         .catch(error => console.error("更新失敗:", error));
     }
 
-    function deleteFilter(filterName) {
-      fetch(`${apiBaseUrl}/delete`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: filterName }) })
-        .then(response => response.json())
+    function deleteFilter(filterModelName) { // filterModelName is the ID like "UF-591"
+      if (!confirm(`確定要刪除濾心 "${getFilterDisplayName(filterModelName)}" 嗎？此操作無法復原。`)) {
+        return;
+      }
+      fetch(`${apiBaseUrl}/delete`, { 
+        method: "POST", 
+        headers: { "Content-Type": "application/json" }, 
+        body: JSON.stringify({ name: filterModelName }) 
+      })
+        .then(response => {
+          if (!response.ok) { throw new Error(`HTTP error! status: ${response.status}`); }
+          return response.json();
+        })
         .then(() => fetchFilters())
         .catch(error => console.error("刪除失敗:", error));
     }
 
-    function createCell(value) { const td = document.createElement("td"); td.textContent = value; return td; }
-    function createButton(label, action) { const btn = document.createElement("button"); btn.textContent = label; btn.onclick = action; return btn; }
+    function createCell(value) { 
+      const td = document.createElement("td"); 
+      td.textContent = value; 
+      return td; 
+    }
 
-    document.addEventListener("DOMContentLoaded", fetchFilters);
+    // Modified to include icon and optional class
+    function createButtonWithIcon(label, iconClass, action, btnClass = "") {
+      const btn = document.createElement("button");
+      const icon = document.createElement("i");
+      icon.className = iconClass; // e.g., "fas fa-trash-alt"
+      icon.style.marginRight = "8px"; // Consistent with CSS, but can be set here too
+
+      btn.appendChild(icon);
+      btn.appendChild(document.createTextNode(label));
+      btn.onclick = action;
+      if (btnClass) {
+        btn.classList.add(btnClass);
+      }
+      return btn;
+    }
+    
+    document.addEventListener("DOMContentLoaded", () => {
+        fetchFilters();
+        updateFilterImagePreview(); // Set initial image for add row
+        updateNewFilterExpirationPreview(); // Calculate initial expiration if date/lifespan are pre-filled
+
+        // Add event listeners for dynamic expiration date calculation in add row
+        document.getElementById("filter-date").addEventListener("change", updateNewFilterExpirationPreview);
+        document.getElementById("filter-lifespan").addEventListener("change", updateNewFilterExpirationPreview);
+        document.getElementById("filter-type").addEventListener("change", () => {
+            updateFilterImagePreview();
+            // No need to call updateNewFilterExpirationPreview here as it doesn't depend on filter type
+        });
+    });
   </script>
 </body>
 </html>
