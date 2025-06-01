@@ -7,7 +7,6 @@ import psycopg2 # 導入 psycopg2
 from flask_jwt_extended import create_access_token, jwt_required, JWTManager, get_jwt_identity
 
 # --- 全局變數定義 ---
-# DEFAULT_FILTERS 保持不變，它們只會在資料庫首次初始化時使用
 DEFAULT_FILTERS = [
     {"name": "UF-591", "last_replace": "2024-06-01", "lifespan": 90},
     {"name": "UF-592", "last_replace": "2024-06-01", "lifespan": 180}
@@ -41,11 +40,7 @@ def get_db():
     if db is None:
         if not DATABASE_URL:
             raise Exception("DATABASE_URL 未設定！無法連接到資料庫。")
-        # 連接到 PostgreSQL
         db = g._database = psycopg2.connect(DATABASE_URL)
-        # 您可以使用 psycopg2.extras.RealDictCursor 來獲取字典形式的行
-        # from psycopg2.extras import RealDictCursor
-        # db = g._database = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
     return db
 
 def init_db():
@@ -54,7 +49,7 @@ def init_db():
         db = get_db()
         cursor = db.cursor()
         try:
-            # PostgreSQL 的 AUTOINCREMENT 為 SERIAL PRIMARY KEY
+            # 建立資料表時，移除 display_order 欄位
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS filters (
                     id SERIAL PRIMARY KEY,
@@ -67,11 +62,9 @@ def init_db():
             print("DEBUG: 資料表 'filters' 檢查/建立成功。")
 
             cursor.execute("SELECT COUNT(*) FROM filters")
-            # psycopg2 的 fetchone() 返回一個元組 (count,)，所以需要 [0]
             if cursor.fetchone()[0] == 0:
                 print("DEBUG: 資料庫為空，開始插入預設濾心資料。")
                 for f in DEFAULT_FILTERS:
-                    # psycopg2 使用 %s 作為佔位符
                     cursor.execute(
                         "INSERT INTO filters (name, last_replace, lifespan) VALUES (%s, %s, %s)",
                         (f["name"], f["last_replace"], f["lifespan"])
@@ -80,7 +73,7 @@ def init_db():
                 print("DEBUG: 資料庫已初始化並載入預設濾心資料。")
             else:
                 print("DEBUG: 資料庫已存在資料，跳過預設資料插入。")
-        except psycopg2.Error as e: # 捕獲 psycopg2 特定的錯誤
+        except psycopg2.Error as e: 
             print(f"ERROR: 初始化資料庫時發生 PostgreSQL 錯誤: {e}")
             raise
         except Exception as e:
@@ -133,8 +126,8 @@ def get_filters():
     try:
         db = get_db()
         cursor = db.cursor()
-        cursor.execute("SELECT name, last_replace, lifespan FROM filters")
-        # psycopg2 的 fetchall() 返回元組列表，我們需要將其轉換為字典列表
+        # 這裡不再按 display_order 排序，預設按 id 排序
+        cursor.execute("SELECT name, last_replace, lifespan FROM filters") 
         filters = []
         for row in cursor.fetchall():
             filters.append({
@@ -173,11 +166,12 @@ def add_filter():
     db = get_db()
     cursor = db.cursor()
     try:
-        # 使用 %s 作為佔位符
         cursor.execute("SELECT COUNT(*) FROM filters WHERE name = %s", (data["name"],))
         if cursor.fetchone()[0] > 0:
             print(f"DEBUG: 濾心名稱 '{data['name']}' 已存在。")
             return jsonify({"message": f"濾心名稱 '{data['name']}' 已存在"}), 409
+        
+        # 不再設定 display_order
         cursor.execute(
             "INSERT INTO filters (name, last_replace, lifespan) VALUES (%s, %s, %s)",
             (data["name"], data["last_replace"], lifespan_int)
@@ -185,7 +179,7 @@ def add_filter():
         db.commit()
         print(f"DEBUG: 濾心 '{data['name']}' 已成功新增。")
         return jsonify({"message": "濾心已成功新增", "filter": {"name": data["name"], "last_replace": data["last_replace"], "lifespan": lifespan_int}}), 201
-    except psycopg2.Error as e: # 捕獲 psycopg2 特定的錯誤
+    except psycopg2.Error as e: 
         print(f"ERROR: 新增濾心時發生 PostgreSQL 錯誤: {e}")
         return jsonify({"message": f"新增濾心時發生錯誤: {e}"}), 500
     except Exception as e:
@@ -210,7 +204,6 @@ def update_filter():
     current_date = datetime.datetime.now().strftime("%Y-%m-%d")
     
     try:
-        # 使用 %s 作為佔位符
         cursor.execute(
             "UPDATE filters SET last_replace = %s WHERE name = %s",
             (current_date, data["name"])
@@ -221,7 +214,6 @@ def update_filter():
             print(f"DEBUG: 濾心 '{data['name']}' 未找到，無法更新。")
             return jsonify({"message": "濾心未找到"}), 404
         
-        # 再次查詢更新後的濾心資訊並返回
         cursor.execute("SELECT name, last_replace, lifespan FROM filters WHERE name = %s", (data["name"],))
         updated_filter_row = cursor.fetchone() 
         if updated_filter_row:
@@ -235,7 +227,7 @@ def update_filter():
         else:
             print("ERROR: 更新成功但無法重新查詢濾心資訊。")
             return jsonify({"message": "更新成功但無法重新查詢濾心資訊"}), 200
-    except psycopg2.Error as e: # 捕獲 psycopg2 特定的錯誤
+    except psycopg2.Error as e: 
         print(f"ERROR: 更新濾心失敗: {e}")
         return jsonify({"message": f"更新濾心失敗: {e}"}), 500
     except Exception as e:
@@ -260,7 +252,6 @@ def delete_filter():
     db = get_db()
     cursor = db.cursor()
     try:
-        # 使用 %s 作為佔位符
         cursor.execute("DELETE FROM filters WHERE name = %s", (data["name"],))
         db.commit()
 
@@ -270,25 +261,21 @@ def delete_filter():
         
         print(f"DEBUG: 濾心 '{data['name']}' 已刪除。")
         return jsonify({"message": f"濾心 '{data['name']}' 已刪除"}), 200
-    except psycopg2.Error as e: # 捕獲 psycopg2 特定的錯誤
+    except psycopg2.Error as e: 
         print(f"ERROR: 刪除濾心失敗: {e}")
         return jsonify({"message": f"刪除濾心失敗: {e}"}), 500
     except Exception as e:
         print(f"ERROR: 刪除濾心失敗: {e}")
         return jsonify({"message": f"刪除濾心失敗: {e}"}), 500
 
+# 移除 /reorder-filters 端點
+
 if __name__ == "__main__":
     print("DEBUG: 正在直接運行 app.py 腳本 (本地開發模式)。")
-    # 在本地開發時，您可能需要手動設置 DATABASE_URL 或使用本地的 PostgreSQL。
-    # 如果您想讓本地也連接到 Render 上的 PostgreSQL，請在啟動前設置 DATABASE_URL 環境變數
-    # 例如: export DATABASE_URL="postgresql://user:password@host:port/database_name"
-    # 或者直接在這裡 hardcode (不建議用於生產):
-    # os.environ["DATABASE_URL"] = "您的 Render PostgreSQL 連接字串"
-    
     with app.app_context():
         try:
             init_db()
             print("DEBUG: 本地開發模式下資料庫初始化完成。")
         except Exception as e:
             print(f"CRITICAL ERROR: 本地開發模式下資料庫初始化失敗: {e}")
-    app.run(debug=True, port=5000) # 設定 port 為 5000
+    app.run(debug=True, port=5000)
