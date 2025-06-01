@@ -61,8 +61,7 @@
   <div id="main-content" class="hidden">
     <h1><i class="fas fa-filter"></i>濾心管理系統</h1>
     <button onclick="performLogout()" style="float: right; margin-bottom: 10px;" class="btn-delete"><i class="fas fa-sign-out-alt"></i>登出</button>
-
-    <div id="add-filter-section" class="filter-card add-new-filter">
+    <div style="clear: both;"></div> <div id="add-filter-section" class="filter-card add-new-filter">
         <h2><i class="fas fa-plus-circle"></i> 新增濾心</h2>
         <div class="add-filter-input-group">
             <label for="filter-type">濾心類型:</label>
@@ -104,7 +103,7 @@
           <th>到期日期</th>
           <th>操作</th>
         </tr>
-        </thead>
+      </thead>
       <tbody id="filter-list">
         </tbody>
     </table>
@@ -198,7 +197,7 @@
     }
 
 
-    // --- 其他輔助函數 (不變) ---
+    // --- 其他輔助函數 ---
 
     function getFilterImageUrl(modelNumber) {
       const model = modelNumber.trim().toUpperCase();
@@ -240,7 +239,7 @@
         }
     }
 
-    // --- 核心功能：取得濾心資料並顯示 (修改了 headers 及顏色判斷) ---
+    // --- 核心功能：取得濾心資料並顯示 ---
     function fetchFilters() {
       // 在發送請求前檢查是否已登入
       if (!isAuthenticated()) {
@@ -250,7 +249,7 @@
       }
 
       fetch(`${apiBaseUrl}/filters`, {
-          headers: getAuthHeaders() // <--- 加上認證標頭
+          headers: getAuthHeaders() 
       })
         .then(response => {
             if (response.status === 401) { // 如果收到 401 Unauthorized
@@ -290,49 +289,62 @@
               let remainingDays = Math.ceil((expirationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
               remainingDays = Math.max(0, remainingDays);
 
-              // 根據剩餘壽命添加顏色類別
-              if (remainingDays <= 0) {
-                tr.classList.add("status-expired"); // 已到期
-              } else if (remainingDays < 30) {
-                tr.classList.add("status-warning"); // 即將到期 (少於 30 天)
-              } else {
-                tr.classList.add("status-ok");     // 正常 (30 天或以上)
-              }
-
+              // --- 濾心名稱 (第 1 列標籤，第 2 列圖+文) ---
               const tdName = document.createElement("td");
-          tdName.setAttribute("data-label", "濾心名稱:"); 
-          
-          const img = document.createElement("img");
-          img.src = getFilterImageUrl(filter.name.trim());
-          img.alt = getFilterDisplayName(filter.name.trim());
-          img.className = "filter-img"; // 這裡的 class="filter-img" 保持不變
-          tdName.appendChild(img);
+              tdName.setAttribute("data-label", "濾心名稱:"); 
+              
+              // 創建一個容器 div 來包裹圖片和名稱
+              const nameContentDiv = document.createElement("div");
+              nameContentDiv.className = "filter-name-content"; 
+              
+              const img = document.createElement("img");
+              img.src = getFilterImageUrl(filter.name.trim());
+              img.alt = getFilterDisplayName(filter.name.trim());
+              img.className = "filter-img"; 
+              nameContentDiv.appendChild(img);
 
-          // 將濾心名稱文本包裹在一個 span 標籤中，並給它一個類別
-          const nameSpan = document.createElement("span");
-          nameSpan.textContent = getFilterDisplayName(filter.name.trim());
-          nameSpan.className = "filter-name-text"; // 新增這個類別
-          tdName.appendChild(nameSpan);
-          
-          tr.appendChild(tdName);
+              const nameSpan = document.createElement("span");
+              nameSpan.textContent = getFilterDisplayName(filter.name.trim());
+              nameSpan.className = "filter-name-text"; 
+              nameContentDiv.appendChild(nameSpan);
 
+              tdName.appendChild(nameContentDiv); 
+              tr.appendChild(tdName);
+
+              // --- 上次更換日期 (第 3 列) ---
               const tdLastReplace = createCell(filter.last_replace);
-              tdLastReplace.setAttribute("data-label", "上次更換日期:"); // 添加 data-label
+              tdLastReplace.setAttribute("data-label", "上次更換日期:"); 
               tr.appendChild(tdLastReplace);
 
+              // --- 剩餘壽命 (第 4 列，顏色在此添加) ---
               const remainingDaysCell = createCell(`${remainingDays} 天`);
-              remainingDaysCell.setAttribute("data-label", "剩餘壽命:"); // 添加 data-label
-              remainingDaysCell.classList.add("remaining-days");
+              remainingDaysCell.setAttribute("data-label", "剩餘壽命:"); 
+              // 僅對這個 td 添加顏色類別
+              if (remainingDays <= 0) {
+                remainingDaysCell.classList.add("status-expired-text"); 
+              } else if (remainingDays < 30) {
+                remainingDaysCell.classList.add("status-warning-text"); 
+              } else {
+                remainingDaysCell.classList.add("status-ok-text");     
+              }
               tr.appendChild(remainingDaysCell);
 
+              // --- 到期日期 (第 5 列) ---
               const tdExpirationDate = createCell(expirationDate.toISOString().split('T')[0]);
-              tdExpirationDate.setAttribute("data-label", "到期日期:"); // 添加 data-label
+              tdExpirationDate.setAttribute("data-label", "到期日期:"); 
               tr.appendChild(tdExpirationDate);
 
+              // --- 操作 (第 6 列標籤，第 7 列按鈕) ---
               const tdOps = document.createElement("td");
-              tdOps.setAttribute("data-label", "操作:"); // 添加 data-label
-              tdOps.appendChild(createButtonWithIcon("更新", "fas fa-sync-alt", () => updateFilter(filter.name), "btn-update"));
-              tdOps.appendChild(createButtonWithIcon("刪除", "fas fa-trash-alt", () => deleteFilter(filter.name), "btn-delete"));
+              tdOps.setAttribute("data-label", "操作:"); 
+              
+              // 創建一個容器 div 來包裹按鈕
+              const opsContentDiv = document.createElement("div");
+              opsContentDiv.className = "filter-ops-content"; 
+              opsContentDiv.appendChild(createButtonWithIcon("更新", "fas fa-sync-alt", () => updateFilter(filter.name), "btn-update"));
+              opsContentDiv.appendChild(createButtonWithIcon("刪除", "fas fa-trash-alt", () => deleteFilter(filter.name), "btn-delete"));
+              
+              tdOps.appendChild(opsContentDiv); 
               tr.appendChild(tdOps);
 
               filterList.appendChild(tr);
@@ -349,7 +361,7 @@
         });
     }
 
-    // --- 新增濾心 (修改了 headers) ---
+    // --- 新增濾心 ---
     function addFilter() {
       const name = document.getElementById("filter-type").value.trim();  
       const lastReplace = document.getElementById("filter-date").value;
@@ -370,7 +382,7 @@
 
       fetch(`${apiBaseUrl}/add`, {  
         method: "POST",  
-        headers: getAuthHeaders(), // <--- 加上認證標頭
+        headers: getAuthHeaders(), 
         body: JSON.stringify({ name, last_replace: lastReplace, lifespan })  
       })
         .then(response => {
@@ -395,14 +407,14 @@
         });
     }
 
-    // --- 更新濾心 (修改了 headers) ---
+    // --- 更新濾心 ---
     function updateFilter(filterModelName) {  
       if (!confirm(`確定要將濾心 "${getFilterDisplayName(filterModelName)}" 的更換日期更新為今天嗎？`)) {
         return;
       }
       fetch(`${apiBaseUrl}/update`, {  
         method: "POST",  
-        headers: getAuthHeaders(), // <--- 加上認證標頭
+        headers: getAuthHeaders(), 
         body: JSON.stringify({ name: filterModelName })  
       })
         .then(response => {
@@ -425,14 +437,14 @@
         });
     }
 
-    // --- 刪除濾心 (修改了 headers) ---
+    // --- 刪除濾心 ---
     function deleteFilter(filterModelName) {  
       if (!confirm(`確定要刪除濾心 "${getFilterDisplayName(filterModelName)}" 嗎？此操作無法復原。`)) {
         return;
       }
       fetch(`${apiBaseUrl}/delete`, {  
         method: "POST",  
-        headers: getAuthHeaders(), // <--- 加上認證標頭
+        headers: getAuthHeaders(), 
         body: JSON.stringify({ name: filterModelName })  
       })
         .then(response => {
