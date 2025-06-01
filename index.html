@@ -61,26 +61,40 @@
   <div id="main-content" class="hidden">
     <h1><i class="fas fa-filter"></i>濾心管理系統</h1>
     <button onclick="performLogout()" style="float: right; margin-bottom: 10px;" class="btn-delete"><i class="fas fa-sign-out-alt"></i>登出</button>
-      <tr id="new-filter-row">
-          <td>
+
+    <div id="add-filter-section" class="filter-card add-new-filter">
+        <h2><i class="fas fa-plus-circle"></i> 新增濾心</h2>
+        <div class="add-filter-input-group">
+            <label for="filter-type">濾心類型:</label>
             <select id="filter-type" onchange="updateFilterImagePreview(); updateNewFilterExpirationPreview();">
-              <option value="UF-591">UF-591 - 5微米PP濾芯</option>
-              <option value="UF-592">UF-592 - 塊狀活性碳濾芯</option>
-              <option value="UF-593">UF-593 - 1微米PP濾芯</option>
-              <option value="UF-504">UF-504 - 逆滲透薄膜</option>
-              <option value="UF-515">UF-515 - 椰殼顆粒活性碳濾芯</option>
+                <option value="UF-591">UF-591 - 5微米PP濾芯</option>
+                <option value="UF-592">UF-592 - 塊狀活性碳濾芯</option>
+                <option value="UF-593">UF-593 - 1微米PP濾芯</option>
+                <option value="UF-504">UF-504 - 逆滲透薄膜</option>
+                <option value="UF-515">UF-515 - 椰殼顆粒活性碳濾芯</option>
             </select>
             <img id="filter-img-preview" src="591.png" alt="Filter Image" class="filter-img">
-          </td>
-          <td><input type="date" id="filter-date" onchange="updateNewFilterExpirationPreview()"></td>
-          <td>
+        </div>
+        <div class="add-filter-input-group">
+            <label for="filter-date">上次更換日期:</label>
+            <input type="date" id="filter-date" onchange="updateNewFilterExpirationPreview()">
+        </div>
+        <div class="add-filter-input-group">
+            <label for="filter-lifespan">濾心壽命:</label>
             <select id="filter-lifespan" onchange="updateNewFilterExpirationPreview()">
-              <option value="90">3個月</option>
-              <option value="180">6個月</option>
-              <option value="365">1年</option>
-              <option value="730">2年</option>
+                <option value="90">3個月</option>
+                <option value="180">6個月</option>
+                <option value="365">1年</option>
+                <option value="730">2年</option>
             </select>
-          </td>
+        </div>
+        <div class="add-filter-input-group">
+            <label for="filter-expiration">預計到期日期:</label>
+            <input type="text" id="filter-expiration" disabled placeholder="自動計算">
+        </div>
+        <button onclick="addFilter()" class="btn-add-large"><i class="fas fa-plus-circle"></i> 新增濾心</button>
+    </div>
+
     <table>
       <thead>
         <tr>
@@ -90,11 +104,7 @@
           <th>到期日期</th>
           <th>操作</th>
         </tr>
-     
-          <td><input type="text" id="filter-expiration" disabled placeholder="自動計算"></td>
-          <td><button onclick="addFilter()"><i class="fas fa-plus-circle"></i>新增</button></td>
-        </tr>
-      </thead>
+        </thead>
       <tbody id="filter-list">
         </tbody>
     </table>
@@ -104,7 +114,7 @@
     const apiBaseUrl = "https://water-2hc2.onrender.com";
 
     // JWT 儲存的 key
-    const JWT_TOKEN_KEY = "access_token"; 
+    const JWT_TOKEN_KEY = "access_token";  
 
     // 濾心詳細資訊，用於名稱顯示和圖片路徑
     const filterDetails = {
@@ -179,15 +189,11 @@
     function getAuthHeaders() {
         const token = localStorage.getItem(JWT_TOKEN_KEY);
         if (!token) {
-            // 如果沒有 token，可能是未登入或 token 已被清除
-            // 可以選擇在這裡強制登出或提示登入
-            // performLogout(); // 強制登出
-            // throw new Error("未認證的請求，請重新登入。");
-            return { "Content-Type": "application/json" }; // 不帶 token，交由後端拒絕
+            return { "Content-Type": "application/json" };
         }
         return {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}` // 在 Authorization 標頭中附帶 JWT
+            "Authorization": `Bearer ${token}`
         };
     }
 
@@ -216,7 +222,7 @@
 
         if (dateInput.value && lifespanSelect.value) {
             try {
-                let lastReplaceDate = new Date(dateInput.value + "T00:00:00"); 
+                let lastReplaceDate = new Date(dateInput.value + "T00:00:00");  
                 if (isNaN(lastReplaceDate.getTime())) {
                     expirationInput.value = "日期無效";
                     return;
@@ -234,7 +240,7 @@
         }
     }
 
-    // --- 核心功能：取得濾心資料並顯示 (修改了 headers) ---
+    // --- 核心功能：取得濾心資料並顯示 (修改了 headers 及顏色判斷) ---
     function fetchFilters() {
       // 在發送請求前檢查是否已登入
       if (!isAuthenticated()) {
@@ -272,7 +278,7 @@
             data.forEach(filter => {
               const tr = document.createElement("tr");
 
-              let lastReplaceDate = new Date(filter.last_replace + "T00:00:00"); 
+              let lastReplaceDate = new Date(filter.last_replace + "T00:00:00");  
               if (isNaN(lastReplaceDate.getTime())) {
                 console.error(`無效的上次更換日期: ${filter.last_replace}`);
                 lastReplaceDate = today;
@@ -284,15 +290,17 @@
               let remainingDays = Math.ceil((expirationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
               remainingDays = Math.max(0, remainingDays);
 
+              // 根據剩餘壽命添加顏色類別
               if (remainingDays <= 0) {
-                tr.classList.add("status-expired"); // 壽命到期
+                tr.classList.add("status-expired"); // 已到期
               } else if (remainingDays < 30) {
-                tr.classList.add("status-warning"); // 即將到期（剩餘天數少於 30 天）
+                tr.classList.add("status-warning"); // 即將到期 (少於 30 天)
               } else {
-                tr.classList.add("status-ok");     // 壽命充足（剩餘天數大於等於 30 天）
+                tr.classList.add("status-ok");     // 正常 (30 天或以上)
               }
 
               const tdName = document.createElement("td");
+              tdName.setAttribute("data-label", "濾心名稱:"); // 添加 data-label
               const img = document.createElement("img");
               img.src = getFilterImageUrl(filter.name.trim());
               img.alt = getFilterDisplayName(filter.name.trim());
@@ -301,15 +309,21 @@
               tdName.appendChild(document.createTextNode(" " + getFilterDisplayName(filter.name.trim())));
               tr.appendChild(tdName);
 
-              tr.appendChild(createCell(filter.last_replace));
+              const tdLastReplace = createCell(filter.last_replace);
+              tdLastReplace.setAttribute("data-label", "上次更換日期:"); // 添加 data-label
+              tr.appendChild(tdLastReplace);
 
               const remainingDaysCell = createCell(`${remainingDays} 天`);
+              remainingDaysCell.setAttribute("data-label", "剩餘壽命:"); // 添加 data-label
               remainingDaysCell.classList.add("remaining-days");
               tr.appendChild(remainingDaysCell);
 
-              tr.appendChild(createCell(expirationDate.toISOString().split('T')[0]));
+              const tdExpirationDate = createCell(expirationDate.toISOString().split('T')[0]);
+              tdExpirationDate.setAttribute("data-label", "到期日期:"); // 添加 data-label
+              tr.appendChild(tdExpirationDate);
 
               const tdOps = document.createElement("td");
+              tdOps.setAttribute("data-label", "操作:"); // 添加 data-label
               tdOps.appendChild(createButtonWithIcon("更新", "fas fa-sync-alt", () => updateFilter(filter.name), "btn-update"));
               tdOps.appendChild(createButtonWithIcon("刪除", "fas fa-trash-alt", () => deleteFilter(filter.name), "btn-delete"));
               tr.appendChild(tdOps);
@@ -330,7 +344,7 @@
 
     // --- 新增濾心 (修改了 headers) ---
     function addFilter() {
-      const name = document.getElementById("filter-type").value.trim(); 
+      const name = document.getElementById("filter-type").value.trim();  
       const lastReplace = document.getElementById("filter-date").value;
       const lifespan = parseInt(document.getElementById("filter-lifespan").value);
 
@@ -347,10 +361,10 @@
         return;
       }
 
-      fetch(`${apiBaseUrl}/add`, { 
-        method: "POST", 
+      fetch(`${apiBaseUrl}/add`, {  
+        method: "POST",  
         headers: getAuthHeaders(), // <--- 加上認證標頭
-        body: JSON.stringify({ name, last_replace: lastReplace, lifespan }) 
+        body: JSON.stringify({ name, last_replace: lastReplace, lifespan })  
       })
         .then(response => {
             if (response.status === 401) {
@@ -358,7 +372,7 @@
                 performLogout();
                 throw new Error("認證失敗");
             }
-          if (!response.ok) { throw new Error(`HTTP error! status: ${response.status}`); }
+          if (!response.ok) { return response.json().then(errorData => { throw new Error(errorData.message || `HTTP error! status: ${response.status}`); }); }
           return response.json();
         })
         .then(data => {
@@ -368,18 +382,21 @@
           document.getElementById("filter-expiration").value = "";
           fetchFilters();
         })
-        .catch(error => console.error("新增失敗:", error));
+        .catch(error => {
+            console.error("新增失敗:", error);
+            alert("新增濾心失敗：" + error.message);
+        });
     }
 
     // --- 更新濾心 (修改了 headers) ---
-    function updateFilter(filterModelName) { 
+    function updateFilter(filterModelName) {  
       if (!confirm(`確定要將濾心 "${getFilterDisplayName(filterModelName)}" 的更換日期更新為今天嗎？`)) {
         return;
       }
-      fetch(`${apiBaseUrl}/update`, { 
-        method: "POST", 
+      fetch(`${apiBaseUrl}/update`, {  
+        method: "POST",  
         headers: getAuthHeaders(), // <--- 加上認證標頭
-        body: JSON.stringify({ name: filterModelName }) 
+        body: JSON.stringify({ name: filterModelName })  
       })
         .then(response => {
             if (response.status === 401) {
@@ -387,7 +404,7 @@
                 performLogout();
                 throw new Error("認證失敗");
             }
-          if (!response.ok) { throw new Error(`HTTP error! status: ${response.status}`); }
+          if (!response.ok) { return response.json().then(errorData => { throw new Error(errorData.message || `HTTP error! status: ${response.status}`); }); }
           return response.json();
         })
         .then(data => {
@@ -395,18 +412,21 @@
             alert(data.message || "濾心已成功更新!");
             fetchFilters();
         })
-        .catch(error => console.error("更新失敗:", error));
+        .catch(error => {
+            console.error("更新失敗:", error);
+            alert("更新濾心失敗：" + error.message);
+        });
     }
 
     // --- 刪除濾心 (修改了 headers) ---
-    function deleteFilter(filterModelName) { 
+    function deleteFilter(filterModelName) {  
       if (!confirm(`確定要刪除濾心 "${getFilterDisplayName(filterModelName)}" 嗎？此操作無法復原。`)) {
         return;
       }
-      fetch(`${apiBaseUrl}/delete`, { 
-        method: "POST", 
+      fetch(`${apiBaseUrl}/delete`, {  
+        method: "POST",  
         headers: getAuthHeaders(), // <--- 加上認證標頭
-        body: JSON.stringify({ name: filterModelName }) 
+        body: JSON.stringify({ name: filterModelName })  
       })
         .then(response => {
             if (response.status === 401) {
@@ -414,7 +434,7 @@
                 performLogout();
                 throw new Error("認證失敗");
             }
-          if (!response.ok) { throw new Error(`HTTP error! status: ${response.status}`); }
+          if (!response.ok) { return response.json().then(errorData => { throw new Error(errorData.message || `HTTP error! status: ${response.status}`); }); }
           return response.json();
         })
         .then(data => {
@@ -422,27 +442,30 @@
             alert(data.message || "濾心已成功刪除!");
             fetchFilters();
         })
-        .catch(error => console.error("刪除失敗:", error));
+        .catch(error => {
+            console.error("刪除失敗:", error);
+            alert("刪除濾心失敗：" + error.message);
+        });
     }
 
     // 輔助函數：創建表格單元格
-    function createCell(value) { 
-      const td = document.createElement("td"); 
-      td.textContent = value; 
-      return td; 
+    function createCell(value) {  
+      const td = document.createElement("td");  
+      td.textContent = value;  
+      return td;  
     }
 
     // 輔助函數：創建帶圖示的按鈕
     function createButtonWithIcon(label, iconClass, action, btnClass = "") {
       const btn = document.createElement("button");
       const icon = document.createElement("i");
-      icon.className = iconClass; 
+      icon.className = iconClass;  
 
       btn.appendChild(icon);
       btn.appendChild(document.createTextNode(label));
-      btn.onclick = action; 
+      btn.onclick = action;  
       if (btnClass) {
-        btn.classList.add(btnClass); 
+        btn.classList.add(btnClass);  
       }
       return btn;
     }
@@ -450,7 +473,7 @@
     // 頁面載入完成時執行
     document.addEventListener("DOMContentLoaded", () => {
         // 根據是否已登入顯示或隱藏內容
-        toggleContentVisibility(); 
+        toggleContentVisibility();  
 
         updateFilterImagePreview();
         document.getElementById("filter-date").value = new Date().toISOString().split('T')[0];
