@@ -61,16 +61,7 @@
   <div id="main-content" class="hidden">
     <h1><i class="fas fa-filter"></i>濾心管理系統</h1>
     <button onclick="performLogout()" style="float: right; margin-bottom: 10px;" class="btn-delete"><i class="fas fa-sign-out-alt"></i>登出</button>
-    <table>
-      <thead>
-        <tr>
-          <th>濾心名稱</th>
-          <th>上次更換日期</th>
-          <th>剩餘壽命</th>
-          <th>到期日期</th>
-          <th>操作</th>
-        </tr>
-        <tr id="new-filter-row">
+      <tr id="new-filter-row">
           <td>
             <select id="filter-type" onchange="updateFilterImagePreview(); updateNewFilterExpirationPreview();">
               <option value="UF-591">UF-591 - 5微米PP濾芯</option>
@@ -90,6 +81,16 @@
               <option value="730">2年</option>
             </select>
           </td>
+    <table>
+      <thead>
+        <tr>
+          <th>濾心名稱</th>
+          <th>上次更換日期</th>
+          <th>剩餘壽命</th>
+          <th>到期日期</th>
+          <th>操作</th>
+        </tr>
+     
           <td><input type="text" id="filter-expiration" disabled placeholder="自動計算"></td>
           <td><button onclick="addFilter()"><i class="fas fa-plus-circle"></i>新增</button></td>
         </tr>
