@@ -1,68 +1,266 @@
+/* style.css */
+
+/* 通用樣式 */
 body {
-    font-family: 'Arial', sans-serif;
-    text-align: center;
-    background: #f4f4f9;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f4f7f6;
     color: #333;
+    line-height: 1.6;
 }
 
 h1 {
-    color: #0077b6;
+    color: #2c3e50;
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 2.5em;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e0e0e0;
 }
 
-form {
-    margin: 20px auto;
-    padding: 10px;
-    background: #e3f2fd;
-    display: inline-block;
-    border-radius: 5px;
+h1 .fas {
+    margin-right: 10px;
+    color: #3498db;
 }
 
-input {
-    margin: 5px;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+/* 主要內容容器 */
+#main-content {
+    max-width: 1000px;
+    margin: 30px auto;
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+    animation: fadeIn 0.8s ease-out;
 }
 
-button {
-    padding: 10px;
-    border: none;
-    cursor: pointer;
-    border-radius: 5px;
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-button:hover {
-    background: #0077b6;
-    color: white;
-}
-
+/* 表格樣式 */
 table {
-    width: 80%;
-    margin: auto;
+    width: 100%;
     border-collapse: collapse;
-    background: white;
-    box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
-    border-radius: 10px;
-    overflow: hidden;
+    margin-top: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+th, td {
+    border: 1px solid #e0e0e0;
+    padding: 15px;
+    text-align: center;
+}
+
+thead {
+    background-color: #3498db;
+    color: white;
 }
 
 th {
-    background: #0077b6;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+tr:nth-child(even) {
+    background-color: #f8f8f8;
+}
+
+tr:hover {
+    background-color: #eaf6fd;
+    transition: background-color 0.3s ease;
+}
+
+/* 按鈕樣式 */
+button {
+    background-color: #3498db;
     color: white;
-    padding: 15px;
+    border: none;
+    padding: 10px 18px;
+    margin: 5px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.95em;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
-td {
+button:hover {
+    background-color: #2980b9;
+    transform: translateY(-2px);
+}
+
+button .fas,
+button .far {
+    margin-right: 8px;
+}
+
+.btn-update {
+    background-color: #27ae60;
+}
+
+.btn-update:hover {
+    background-color: #229954;
+}
+
+.btn-delete {
+    background-color: #e74c3c;
+}
+
+.btn-delete:hover {
+    background-color: #c0392b;
+}
+
+/* 新增濾心行樣式 */
+#new-filter-row {
+    background-color: #ecf0f1;
+}
+
+#new-filter-row select,
+#new-filter-row input[type="date"],
+#new-filter-row input[type="text"] {
+    width: calc(100% - 20px);
     padding: 10px;
-    border-bottom: 1px solid #ddd;
+    margin: 5px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 1em;
 }
 
-.low-days {
-    color: red;
+#new-filter-row button {
+    background-color: #f39c12;
+}
+
+#new-filter-row button:hover {
+    background-color: #e67e22;
+}
+
+/* 濾心圖片 */
+.filter-img {
+    width: 50px;
+    height: 50px;
+    vertical-align: middle;
+    margin-right: 10px;
+    border-radius: 5px;
+    object-fit: cover;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* 狀態顏色 */
+.status-expired {
+    background-color: #ffe0e0; /* 淺紅色背景 */
+    color: #e74c3c; /* 紅色文字 */
     font-weight: bold;
 }
 
-.icon {
-    font-size: 18px;
-    padding: 5px;
+.status-warning {
+    background-color: #fffacd; /* 檸檬綢色背景 */
+    color: #e67e22; /* 橘色文字 */
+    font-weight: bold;
+}
+
+.remaining-days {
+    font-weight: bold;
+}
+
+/* 登入容器樣式 (已存在於您的 HTML inline style，此處僅為完整性展示，您可以保持 HTML 中的內聯樣式) */
+/*
+#login-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 80vh;
+    text-align: center;
+    background-color: #fff;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    max-width: 400px;
+    margin: 50px auto;
+}
+#login-container input {
+    margin-bottom: 15px;
+    padding: 12px;
+    width: 80%;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+#login-container button {
+    width: 80%;
+    padding: 12px;
+    font-size: 1.1em;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+#login-container button:hover {
+    background-color: #2980b9;
+}
+.hidden {
+    display: none !important;
+}
+*/
+
+/* RWD 調整 */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    #main-content {
+        padding: 15px;
+        margin: 15px auto;
+    }
+    table, thead, tbody, th, td, tr {
+        display: block;
+    }
+    thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+    tr {
+        margin-bottom: 15px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    td {
+        border: none;
+        position: relative;
+        padding-left: 50%;
+        text-align: left;
+    }
+    td:before {
+        position: absolute;
+        top: 0px;
+        left: 6px;
+        width: 45%;
+        padding-right: 10px;
+        white-space: nowrap;
+        font-weight: bold;
+        content: attr(data-label); /* 動態顯示標籤 */
+    }
+    /* 為每個 td 添加 data-label 屬性以在手機上顯示標題 */
+    td:nth-of-type(1):before { content: "濾心名稱:"; }
+    td:nth-of-type(2):before { content: "上次更換日期:"; }
+    td:nth-of-type(3):before { content: "剩餘壽命:"; }
+    td:nth-of-type(4):before { content: "到期日期:"; }
+    td:nth-of-type(5):before { content: "操作:"; }
+
+    #new-filter-row td {
+        padding-left: 15px; /* 新增行不需要 data-label */
+    }
+    #new-filter-row td:before {
+        content: none;
+    }
 }
