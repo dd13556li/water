@@ -90,16 +90,25 @@ def close_connection(exception):
 
 # --- 新增的認證路由 ---
 @app.route("/login", methods=["POST"])
+@cross_origin()
 def login():
+    # 下面這個 if 區塊通常在 @cross_origin() 存在時可以省略，
+    # 但為了明確性，保留它也無妨。Flask-CORS 理論上會自動處理 OPTIONS 請求。
+    if request.method == "OPTIONS":
+        print("DEBUG: 收到 /login OPTIONS 預檢請求。")
+        return jsonify({"message": "OK"}), 200 # 回應 200 OK
+        
     username = request.json.get("username", None)
     password = request.json.get("password", None)
 
-    if username != USERS.get(username) or password != USERS.get(username): # 這裡的判斷需要更嚴謹！
-        # 確保是檢查 USERS[username] == password
-        if username not in USERS or USERS[username] != password:
-            print(f"DEBUG: 無效登入嘗試 - 用戶: {username}")
-            return jsonify({"message": "錯誤的使用者名稱或密碼"}), 401
-
+    # 這裡的帳號密碼驗證邏輯：
+    # 確保是檢查 USERS 字典中是否存在該用戶名，並且密碼匹配。
+    # 原始程式碼的 `username != USERS.get(username)` 這部分可能有點問題。
+    # 更正後的判斷：
+    if username not in USERS or USERS[username] != password:
+        print(f"DEBUG: 無效登入嘗試 - 用戶: {username}")
+        return jsonify({"message": "錯誤的使用者名稱或密碼"}), 401
+    
     access_token = create_access_token(identity=username)
     print(f"DEBUG: 用戶 '{username}' 登入成功，發送 JWT。")
     return jsonify(access_token=access_token)
