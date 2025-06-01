@@ -306,68 +306,66 @@ tr.status-expired:hover {
 
 /* 手機適配：將表格在小螢幕上轉換為卡片式佈局 */
 @media (max-width: 768px) {
-    table, thead, tbody, th, td, tr {
-        display: block; /* 讓表格元素像區塊一樣排列 */
-    }
+    /* ... (您現有的媒體查詢內部樣式，例如 table, thead, tbody, td, tr 的樣式) ... */
 
-    thead tr {
-        position: absolute;
-        top: -9999px; /* 隱藏表格頭 */
-        left: -9999px;
-    }
-
-    tr {
-        border: 1px solid #ccc;
-        margin-bottom: 10px;
-        background-color: #fff; /* 為每個卡片設定背景 */
-        border-radius: 8px;
-        padding: 15px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        display: flex; /* 使用 flexbox 佈局卡片內容 */
-        flex-direction: column; /* 垂直排列 */
-    }
-
-    td {
-        border: none; /* 移除單元格邊框 */
-        position: relative;
-        padding-left: 50%; /* 為標籤留出空間 */
-        text-align: right; /* 值右對齊 */
-    }
-
-    td:before {
-        content: attr(data-label); /* 使用 data-label 屬性作為標籤 */
-        position: absolute;
-        left: 6px;
-        width: 45%;
-        padding-right: 10px;
-        white-space: nowrap;
-        text-align: left; /* 標籤左對齊 */
-        font-weight: bold;
-        color: #666;
-    }
-
-    /* 針對操作按鈕的特殊處理 */
-    td:last-child {
-        text-align: center; /* 操作按鈕居中 */
-        padding-left: 6px; /* 移除左側填充 */
-        margin-top: 10px; /* 與上方內容間距 */
-    }
-
-    td:last-child button {
-        margin: 5px; /* 按鈕間距 */
-    }
-    
-    /* 調整濾心名稱的顯示，使其更緊湊 */
-    td:first-child {
-        display: flex;
-        align-items: center;
-        justify-content: flex-start; /* 左對齊 */
-        padding-left: 6px;
+    /* 確保濾心名稱圖片和文字的間距 */
+    td:first-child { /* 這是濾心名稱那一個 td */
+        display: flex; /* 使用 flexbox 佈局 */
+        align-items: center; /* 垂直居中對齊 */
+        justify-content: flex-start; /* 從左邊開始排列 */
+        padding-left: 6px; /* 適當的左填充 */
         font-weight: bold;
         color: #333;
     }
-    td:first-child .filter-img {
-        margin-right: 10px; /* 圖片與文字間距 */
+
+    td:first-child .filter-img { /* 濾心圖片的樣式 */
+        max-width: 40px; /* 稍微調整圖片大小，使其更適合卡片 */
+        height: auto;
+        margin-right: 8px; /* 圖片與文字之間適當的間距 */
+        min-width: 40px; /* 確保圖片有最小寬度，避免過小 */
+    }
+
+    .filter-name-text { /* 濾心名稱文本的樣式 (針對步驟1中新增的 span) */
+        flex-grow: 1; /* 讓文本佔據剩餘空間 */
+        min-width: 0; /* 允許文本在必要時收縮，但不會完全消失 */
+        white-space: normal; /* 允許文本換行 */
+        overflow: hidden; /* 隱藏溢出文本 */
+        text-overflow: ellipsis; /* 對溢出文本顯示省略號 */
+        word-break: break-word; /* 允許長單詞在必要時斷行 */
+        text-align: left; /* 確保文本左對齊 */
+    }
+
+    /* 調整其他 td 的樣式，讓標籤和內容對齊更整齊 */
+    td {
+        /* ... 您現有的 td 樣式 ... */
+        text-align: left; /* 讓所有 data-label 後的內容都左對齊，保持一致性 */
+        padding-left: 15px; /* 調整左填充，確保內容不會太靠近邊緣 */
+        padding-bottom: 5px; /* 每個屬性間的垂直間距 */
+    }
+
+    td:before {
+        /* ... 您現有的 td:before 樣式 ... */
+        width: auto; /* 讓標籤的寬度根據內容自動調整 */
+        min-width: 80px; /* 給標籤設定一個最小寬度，確保對齊 */
+        padding-right: 10px; /* 標籤與值之間的間距 */
+        font-weight: normal; /* 標籤字體可以稍微輕一點 */
+        color: #888; /* 標籤顏色可以稍微淡一點 */
+    }
+
+    td:last-child {
+        text-align: center; /* 操作按鈕居中 */
+        padding-left: 6px;
+        margin-top: 10px;
+        display: flex; /* 讓按鈕在小螢幕下橫向排列 */
+        justify-content: center; /* 居中對齊 */
+        flex-wrap: wrap; /* 允許按鈕換行 */
+    }
+
+    td:last-child button {
+        flex: 1 1 auto; /* 讓按鈕彈性成長，但允許縮小 */
+        margin: 5px; /* 按鈕間距 */
+        min-width: 90px; /* 確保按鈕不會太小 */
+        max-width: 120px; /* 限制按鈕最大寬度 */
     }
 }
 /* ... 您現有的 CSS 樣式 ... */
