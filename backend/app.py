@@ -8,19 +8,9 @@ import sqlite3
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
-# 為了持久性儲存，現在使用 SQLite 資料庫檔案
-# 注意：在 Render 免費版中，/tmp/ 是非持久性的。每次服務重啟資料會重置。
-DATABASE = "/tmp/filters.db"
+# ... (你的 DATABASE 和 DEFAULT_FILTERS 定義) ...
 
-# 預設濾心資料，用於資料庫初始化
-DEFAULT_FILTERS = [
-    {"name": "前置濾網", "last_replace": "2025-05-01", "lifespan": 60},
-    {"name": "活性碳濾心", "last_replace": "2025-05-01", "lifespan": 90}
-]
-
-# --- 資料庫操作函式 ---
-
-# 獲取資料庫連接
+# 獲取資料庫連接 (不變)
 def get_db():
     db = getattr(g, '_database', None)
     if db is None:
@@ -28,57 +18,45 @@ def get_db():
         db.row_factory = sqlite3.Row
     return db
 
-# 初始化資料庫：建立表格並插入預設資料 (如果資料庫為空)
+# 初始化資料庫 (不變，但現在會由外部腳本調用)
 def init_db():
     print("DEBUG: 嘗試初始化資料庫...")
-    # 注意：這裡我們不再需要 with app.app_context()
-    # 因為這個函數會在 Flask app 載入時被調用，那時上下文已經可用
-    db = get_db() # 直接獲取 db 連接
-    cursor = db.cursor()
-    try:
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS filters (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL UNIQUE,
-                last_replace TEXT NOT NULL,
-                lifespan INTEGER NOT NULL
-            )
-        ''')
-        db.commit()
-        print("DEBUG: 資料表 'filters' 檢查/建立成功。")
-
-        cursor.execute("SELECT COUNT(*) FROM filters")
-        if cursor.fetchone()[0] == 0:
-            print("DEBUG: 資料庫為空，開始插入預設濾心資料。")
-            for f in DEFAULT_FILTERS:
-                cursor.execute(
-                    "INSERT INTO filters (name, last_replace, lifespan) VALUES (?, ?, ?)",
-                    (f["name"], f["last_replace"], f["lifespan"])
+    # 這裡可以保留 with app.app_context()，因為這個函數現在通常會在一個已建立上下文的環境中被調用
+    with app.app_context(): # 確保在應用程式上下文中執行
+        db = get_db()
+        cursor = db.cursor()
+        try:
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS filters (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL UNIQUE,
+                    last_replace TEXT NOT NULL,
+                    lifespan INTEGER NOT NULL
                 )
+            ''')
             db.commit()
-            print("DEBUG: 資料庫已初始化並載入預設濾心資料。")
-        else:
-            print("DEBUG: 資料庫已存在資料，跳過預設資料插入。")
-    except sqlite3.Error as e:
-        print(f"ERROR: 初始化資料庫時發生 SQLite 錯誤: {e}")
-        raise
-    except Exception as e:
-        print(f"CRITICAL ERROR: 初始化資料庫時發生未知錯誤: {e}")
-        raise
+            print("DEBUG: 資料表 'filters' 檢查/建立成功。")
 
-# 在應用程式載入時立即調用 init_db()
-# Gunicorn 會載入整個 app.py 檔案，因此這會在服務啟動時執行
-try:
-    init_db()
-    print("DEBUG: 應用程式載入時資料庫初始化完成。")
-except Exception as e:
-    print(f"CRITICAL ERROR: 應用程式啟動時資料庫初始化失敗: {e}")
-    # 如果這裡失敗，應用程式可能無法正常運行，可以選擇讓它崩潰
-    # import sys
-    # sys.exit(1)
+            cursor.execute("SELECT COUNT(*) FROM filters")
+            if cursor.fetchone()[0] == 0:
+                print("DEBUG: 資料庫為空，開始插入預設濾心資料。")
+                for f in DEFAULT_FILTERS:
+                    cursor.execute(
+                        "INSERT INTO filters (name, last_replace, lifespan) VALUES (?, ?, ?)",
+                        (f["name"], f["last_replace"], f["lifespan"])
+                    )
+                db.commit()
+                print("DEBUG: 資料庫已初始化並載入預設濾心資料。")
+            else:
+                print("DEBUG: 資料庫已存在資料，跳過預設資料插入。")
+        except sqlite3.Error as e:
+            print(f"ERROR: 初始化資料庫時發生 SQLite 錯誤: {e}")
+            raise
+        except Exception as e:
+            print(f"CRITICAL ERROR: 初始化資料庫時發生未知錯誤: {e}")
+            raise
 
-
-# 在每次請求結束後關閉資料庫連接
+# 在每次請求結束後關閉資料庫連接 (不變)
 @app.teardown_appcontext
 def close_connection(exception):
     db = getattr(g, '_database', None)
@@ -86,14 +64,14 @@ def close_connection(exception):
         db.close()
         print("DEBUG: 資料庫連接已關閉。")
 
-# --- 路由 (以下部分保持不變) ---
-
+# --- 路由 (這部分保持不變) ---
 @app.route("/")
 def home():
     return jsonify({"message": "Flask 服務運行中 🚀"})
 
 @app.route("/filters", methods=["GET"])
 def get_filters():
+    # ... (此函數內容不變) ...
     print("DEBUG: 收到 /filters 請求。")
     try:
         db = get_db()
@@ -108,6 +86,7 @@ def get_filters():
 
 @app.route("/add", methods=["POST"])
 def add_filter():
+    # ... (此函數內容不變) ...
     print("DEBUG: 收到 /add 請求。")
     data = request.json
     if not data:
@@ -150,6 +129,7 @@ def add_filter():
 
 @app.route("/update", methods=["POST"])
 def update_filter():
+    # ... (此函數內容不變) ...
     print("DEBUG: 收到 /update 請求。")
     data = request.json
     
@@ -188,6 +168,7 @@ def update_filter():
 @app.route("/delete", methods=["POST", "OPTIONS"])
 @cross_origin()
 def delete_filter():
+    # ... (此函數內容不變) ...
     if request.method == "OPTIONS":
         print("DEBUG: 收到 /delete OPTIONS 預檢請求。")
         return jsonify({"message": "OK"}), 200
@@ -215,7 +196,13 @@ def delete_filter():
         return jsonify({"message": f"刪除濾心失敗: {e}"}), 500
 
 if __name__ == "__main__":
-    # 如果是直接運行此腳本 (例如: python app.py)，app.run() 會提供自己的應用程式上下文
-    # 因此這裡不需要額外的 init_db() 調用，因為上面已經在檔案頂層調用過了
-    print("DEBUG: 正在直接運行 app.py 腳本。")
+    # 這裡只為本地開發環境提供 Flask 的內置服務器運行
+    print("DEBUG: 正在直接運行 app.py 腳本 (本地開發模式)。")
+    # 如果你在本地直接運行，這裡可以再次調用 init_db，但需要上下文
+    with app.app_context():
+        try:
+            init_db()
+            print("DEBUG: 本地開發模式下資料庫初始化完成。")
+        except Exception as e:
+            print(f"CRITICAL ERROR: 本地開發模式下資料庫初始化失敗: {e}")
     app.run(debug=True)
