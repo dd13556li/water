@@ -300,14 +300,21 @@
               }
 
               const tdName = document.createElement("td");
-              tdName.setAttribute("data-label", "濾心名稱:"); // 添加 data-label
-              const img = document.createElement("img");
-              img.src = getFilterImageUrl(filter.name.trim());
-              img.alt = getFilterDisplayName(filter.name.trim());
-              img.className = "filter-img";
-              tdName.appendChild(img);
-              tdName.appendChild(document.createTextNode(" " + getFilterDisplayName(filter.name.trim())));
-              tr.appendChild(tdName);
+          tdName.setAttribute("data-label", "濾心名稱:"); 
+          
+          const img = document.createElement("img");
+          img.src = getFilterImageUrl(filter.name.trim());
+          img.alt = getFilterDisplayName(filter.name.trim());
+          img.className = "filter-img"; // 這裡的 class="filter-img" 保持不變
+          tdName.appendChild(img);
+
+          // 將濾心名稱文本包裹在一個 span 標籤中，並給它一個類別
+          const nameSpan = document.createElement("span");
+          nameSpan.textContent = getFilterDisplayName(filter.name.trim());
+          nameSpan.className = "filter-name-text"; // 新增這個類別
+          tdName.appendChild(nameSpan);
+          
+          tr.appendChild(tdName);
 
               const tdLastReplace = createCell(filter.last_replace);
               tdLastReplace.setAttribute("data-label", "上次更換日期:"); // 添加 data-label
