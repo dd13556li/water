@@ -169,6 +169,42 @@ button .far {
     font-weight: bold;
 }
 
+/* style.css */
+
+/* ... 您現有的 CSS 樣式 ... */
+
+/* 濾心狀態顏色 */
+.status-ok {
+    background-color: #e6ffe6; /* 淺綠色，表示正常 */
+    color: #28a745; /* 深綠色文字 */
+}
+
+.status-warning {
+    background-color: #fffacd; /* 淺黃色，表示即將到期 */
+    color: #e67e22; /* 橘色文字 */
+}
+
+.status-expired {
+    background-color: #ffe0e0; /* 淺紅色，表示已到期 */
+    color: #dc3545; /* 紅色文字 */
+    font-weight: bold; /* 更粗的字體強調 */
+}
+
+/* 確保這些狀態顏色樣式在您的表格行 hover 樣式之後，以確保優先級 */
+tr.status-ok:hover {
+    background-color: #d4f8d4;
+}
+
+tr.status-warning:hover {
+    background-color: #fff1c0;
+}
+
+tr.status-expired:hover {
+    background-color: #ffcccc;
+}
+
+/* ... 您現有的 CSS 樣式 ... */
+
 /* 登入容器樣式 (已存在於您的 HTML inline style，此處僅為完整性展示，您可以保持 HTML 中的內聯樣式) */
 /*
 #login-container {
