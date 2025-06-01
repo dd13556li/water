@@ -169,6 +169,7 @@
   <script>
     const apiBaseUrl = "https://water-2hc2.onrender.com";
 
+    // 濾心詳細資訊，用於名稱顯示和圖片路徑
     const filterDetails = {
       "UF-591": { name: "UF-591 - 5微米PP濾芯", img: "591.png" },
       "UF-592": { name: "UF-592 - 塊狀活性碳濾芯", img: "592.png" },
@@ -177,21 +178,25 @@
       "UF-515": { name: "UF-515 - 椰殼顆粒活性碳濾芯", img: "515.png" }
     };
 
+    // 根據型號獲取圖片 URL
     function getFilterImageUrl(modelNumber) {
       const model = modelNumber.trim().toUpperCase();
-      return (filterDetails[model] && filterDetails[model].img) || "default.png";
+      return (filterDetails[model] && filterDetails[model].img) || "default.png"; // 如果沒有對應圖片則顯示預設
     }
 
+    // 根據型號獲取顯示名稱
     function getFilterDisplayName(modelNumber) {
       const model = modelNumber.trim().toUpperCase();
       return (filterDetails[model] && filterDetails[model].name) || modelNumber;
     }
 
+    // 更新新增濾心行的圖片預覽
     function updateFilterImagePreview() {
       const filterType = document.getElementById("filter-type").value;
       document.getElementById("filter-img-preview").src = getFilterImageUrl(filterType);
     }
     
+    // 更新新增濾心行的到期日期預覽
     function updateNewFilterExpirationPreview() {
         const dateInput = document.getElementById("filter-date");
         const lifespanSelect = document.getElementById("filter-lifespan");
@@ -199,89 +204,122 @@
 
         if (dateInput.value && lifespanSelect.value) {
             try {
-                let lastReplaceDate = new Date(dateInput.value + "T00:00:00"); // Ensure parsing as local date
-                if (isNaN(lastReplaceDate.getTime())) {
+                // 使用 "T00:00:00" 確保日期解析為本地時間的午夜，避免時區問題
+                let lastReplaceDate = new Date(dateInput.value + "T00:00:00"); 
+                if (isNaN(lastReplaceDate.getTime())) { // 檢查日期是否有效
                     expirationInput.value = "日期無效";
                     return;
                 }
                 let lifespanDays = parseInt(lifespanSelect.value);
                 let expirationDate = new Date(lastReplaceDate);
                 expirationDate.setDate(lastReplaceDate.getDate() + lifespanDays);
+                // 格式化為 YYYY-MM-DD 顯示
                 expirationInput.value = expirationDate.toISOString().split('T')[0];
             } catch (e) {
                 expirationInput.value = "計算錯誤";
                 console.error("Error calculating expiration date:", e);
             }
         } else {
-            expirationInput.value = "";
+            expirationInput.value = ""; // 清空預覽
         }
     }
 
-
+    // 核心功能：獲取濾心資料並顯示在網頁上
     function fetchFilters() {
       fetch(`${apiBaseUrl}/filters`)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) { // 檢查 HTTP 響應狀態碼
+                return response.json().then(errorData => {
+                    throw new Error(errorData.message || '網路回應不正確');
+                });
+            }
+            return response.json();
+        })
         .then(data => {
           console.log("API 回傳資料:", data);
           const filterList = document.getElementById("filter-list");
-          filterList.innerHTML = "";
+          filterList.innerHTML = ""; // 清空現有列表
 
-          data.forEach(filter => {
-            const tr = document.createElement("tr");
+          // 獲取當前日期 (今天的日期)，用於計算剩餘壽命
+          const today = new Date();
+          today.setHours(0,0,0,0); // 正規化為當天開始，確保計算準確
 
-            let lastReplaceDate = new Date(filter.last_replace + "T00:00:00"); // Assume date string from API is YYYY-MM-DD
-            let expirationDate = new Date(lastReplaceDate);
-            expirationDate.setDate(lastReplaceDate.getDate() + Number(filter.lifespan));
+          if (Array.isArray(data)) {
+            data.forEach(filter => {
+              const tr = document.createElement("tr");
 
-            let today = new Date();
-            today.setHours(0,0,0,0); // Normalize today to start of day for accurate comparison
-            
-            let remainingDays = Math.ceil((expirationDate - today) / (1000 * 60 * 60 * 24));
-            remainingDays = Math.max(0, remainingDays); // Don't show negative days, show 0 if past due.
+              // 將上次更換日期轉換為 Date 物件
+              let lastReplaceDate = new Date(filter.last_replace + "T00:00:00"); 
+              if (isNaN(lastReplaceDate.getTime())) {
+                console.error(`無效的上次更換日期: ${filter.last_replace}`);
+                lastReplaceDate = today; // 設為今天以避免崩潰
+              }
 
-            if (remainingDays <= 0) {
-              tr.classList.add("status-expired");
-            } else if (remainingDays < 30) {
-              tr.classList.add("status-warning");
-            }
+              // 計算到期日期
+              let expirationDate = new Date(lastReplaceDate);
+              expirationDate.setDate(lastReplaceDate.getDate() + Number(filter.lifespan));
 
-            const tdName = document.createElement("td");
-            const img = document.createElement("img");
-            // filter.name from API is expected to be the model number, e.g., "UF-591"
-            img.src = getFilterImageUrl(filter.name.trim()); 
-            img.alt = getFilterDisplayName(filter.name.trim());
-            img.className = "filter-img";
-            tdName.appendChild(img);
-            tdName.appendChild(document.createTextNode(" " + getFilterDisplayName(filter.name.trim())));
-            tr.appendChild(tdName);
+              // 計算剩餘天數 (當前日期到到期日期的天數)
+              let remainingDays = Math.ceil((expirationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+              remainingDays = Math.max(0, remainingDays); // 確保不顯示負數，最低為 0
 
-            tr.appendChild(createCell(filter.last_replace));
-            
-            const remainingDaysCell = createCell(`${remainingDays} 天`);
-            remainingDaysCell.classList.add("remaining-days");
-            tr.appendChild(remainingDaysCell);
-            
-            tr.appendChild(createCell(expirationDate.toISOString().split('T')[0]));
+              // 根據剩餘天數添加 CSS 類別來改變行顏色
+              if (remainingDays <= 0) {
+                tr.classList.add("status-expired"); // 已過期
+              } else if (remainingDays < 30) {
+                tr.classList.add("status-warning"); // 即將到期 (剩餘不到 30 天)
+              }
 
-            const tdOps = document.createElement("td");
-            // The filter.name here is the model ID, which is what the backend expects
-            tdOps.appendChild(createButtonWithIcon("更新", "fas fa-sync-alt", () => updateFilter(filter.name), "btn-update"));
-            tdOps.appendChild(createButtonWithIcon("刪除", "fas fa-trash-alt", () => deleteFilter(filter.name), "btn-delete"));
-            tr.appendChild(tdOps);
+              // 濾心名稱 (包含圖片和顯示名稱)
+              const tdName = document.createElement("td");
+              const img = document.createElement("img");
+              img.src = getFilterImageUrl(filter.name.trim()); // 濾心名稱預期為型號
+              img.alt = getFilterDisplayName(filter.name.trim());
+              img.className = "filter-img";
+              tdName.appendChild(img);
+              tdName.appendChild(document.createTextNode(" " + getFilterDisplayName(filter.name.trim())));
+              tr.appendChild(tdName);
 
-            filterList.appendChild(tr);
-          });
+              // 上次更換日期
+              tr.appendChild(createCell(filter.last_replace));
+              
+              // 剩餘壽命
+              const remainingDaysCell = createCell(`${remainingDays} 天`);
+              remainingDaysCell.classList.add("remaining-days"); // 添加類名以便 CSS 樣式化
+              tr.appendChild(remainingDaysCell);
+              
+              // 到期日期
+              tr.appendChild(createCell(expirationDate.toISOString().split('T')[0])); // 格式化為 YYYY-MM-DD
+
+              // 操作按鈕
+              const tdOps = document.createElement("td");
+              // 注意：這裡直接將 filter.name (型號) 傳遞給函數
+              tdOps.appendChild(createButtonWithIcon("更新", "fas fa-sync-alt", () => updateFilter(filter.name), "btn-update"));
+              tdOps.appendChild(createButtonWithIcon("刪除", "fas fa-trash-alt", () => deleteFilter(filter.name), "btn-delete"));
+              tr.appendChild(tdOps);
+
+              filterList.appendChild(tr);
+            });
+          } else {
+            console.error("API 回傳資料格式不正確，預期為陣列:", data);
+            filterList.innerHTML = `<tr><td colspan="5" style="color: red;">載入濾心資料失敗：伺服器回應格式不正確。</td></tr>`;
+          }
         })
-        .catch(error => console.error("取得濾心資料失敗:", error));
+        .catch(error => {
+          console.error("取得濾心資料失敗:", error);
+          const filterList = document.getElementById("filter-list");
+          filterList.innerHTML = `<tr><td colspan="5" style="color: red;">載入濾心資料失敗：${error.message || '請檢查網絡或伺服器。'}</td></tr>`;
+        });
     }
 
+    // 新增濾心
     function addFilter() {
-      // Send the model number (value) as name to the backend
+      // 從 select 元素獲取濾心型號作為名稱
       const name = document.getElementById("filter-type").value.trim(); 
-      const date = document.getElementById("filter-date").value;
+      const lastReplace = document.getElementById("filter-date").value;
       const lifespan = parseInt(document.getElementById("filter-lifespan").value);
 
-      if (!date) {
+      if (!lastReplace) {
         alert("請選擇上次更換日期！");
         return;
       }
@@ -289,48 +327,74 @@
         alert("請選擇濾心類型！");
         return;
       }
+      if (isNaN(lifespan)) {
+        alert("請選擇有效的濾心壽命！");
+        return;
+      }
 
       fetch(`${apiBaseUrl}/add`, { 
         method: "POST", 
         headers: { "Content-Type": "application/json" }, 
-        body: JSON.stringify({ name, last_replace: date, lifespan }) 
+        body: JSON.stringify({ name, last_replace: lastReplace, lifespan }) 
       })
         .then(response => {
-          if (!response.ok) { throw new Error(`HTTP error! status: ${response.status}`); }
+          if (!response.ok) { // 處理 HTTP 錯誤
+            return response.json().then(errorData => {
+                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+            });
+          }
           return response.json();
         })
-        .then(() => {
-          fetchFilters();
-          // Clear input fields after successful add
+        .then(data => {
+          console.log("新增結果:", data);
+          alert(data.message || "濾心已成功新增!");
+          // 清空新增表單欄位
           document.getElementById("filter-date").value = "";
           document.getElementById("filter-expiration").value = "";
-          // Optionally reset filter type and lifespan to defaults
+          // 可以選擇將濾心類型和壽命重置為預設值
           // document.getElementById("filter-type").selectedIndex = 0;
           // document.getElementById("filter-lifespan").selectedIndex = 0;
-          // updateFilterImagePreview(); // if type is reset
+          // updateFilterImagePreview(); 
+          // updateNewFilterExpirationPreview(); 
+          fetchFilters(); // 重新載入濾心列表
         })
-        .catch(error => console.error("新增失敗:", error));
+        .catch(error => {
+          console.error("新增失敗:", error);
+          alert(`新增失敗: ${error.message}`);
+        });
     }
 
-    function updateFilter(filterModelName) { // filterModelName is the ID like "UF-591"
-      if (!confirm(`確定要更新濾心 "${getFilterDisplayName(filterModelName)}" 的更換日期為今天嗎？`)) {
+    // 更新濾心的更換日期為今天
+    function updateFilter(filterModelName) { 
+      if (!confirm(`確定要將濾心 "${getFilterDisplayName(filterModelName)}" 的更換日期更新為今天嗎？`)) {
         return;
       }
       fetch(`${apiBaseUrl}/update`, { 
         method: "POST", 
         headers: { "Content-Type": "application/json" }, 
-        // Backend should set last_replace to today for this filter name
         body: JSON.stringify({ name: filterModelName }) 
       })
         .then(response => {
-          if (!response.ok) { throw new Error(`HTTP error! status: ${response.status}`); }
+          if (!response.ok) {
+            return response.json().then(errorData => {
+                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+            });
+          }
           return response.json();
         })
-        .then(() => fetchFilters())
-        .catch(error => console.error("更新失敗:", error));
+        .then(data => {
+            console.log("更新結果:", data);
+            alert(data.message || "濾心已成功更新!");
+            fetchFilters(); // 重新載入濾心列表
+        })
+        .catch(error => {
+            console.error("更新失敗:", error);
+            alert(`更新失敗: ${error.message}`);
+        });
     }
 
-    function deleteFilter(filterModelName) { // filterModelName is the ID like "UF-591"
+    // 刪除濾心
+    function deleteFilter(filterModelName) { 
       if (!confirm(`確定要刪除濾心 "${getFilterDisplayName(filterModelName)}" 嗎？此操作無法復原。`)) {
         return;
       }
@@ -340,46 +404,60 @@
         body: JSON.stringify({ name: filterModelName }) 
       })
         .then(response => {
-          if (!response.ok) { throw new Error(`HTTP error! status: ${response.status}`); }
+          if (!response.ok) {
+            return response.json().then(errorData => {
+                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+            });
+          }
           return response.json();
         })
-        .then(() => fetchFilters())
-        .catch(error => console.error("刪除失敗:", error));
+        .then(data => {
+            console.log("刪除結果:", data);
+            alert(data.message || "濾心已成功刪除!");
+            fetchFilters(); // 重新載入濾心列表
+        })
+        .catch(error => {
+            console.error("刪除失敗:", error);
+            alert(`刪除失敗: ${error.message}`);
+        });
     }
 
+    // 輔助函數：創建表格單元格
     function createCell(value) { 
       const td = document.createElement("td"); 
       td.textContent = value; 
       return td; 
     }
 
-    // Modified to include icon and optional class
+    // 輔助函數：創建帶圖示的按鈕
     function createButtonWithIcon(label, iconClass, action, btnClass = "") {
       const btn = document.createElement("button");
       const icon = document.createElement("i");
-      icon.className = iconClass; // e.g., "fas fa-trash-alt"
-      icon.style.marginRight = "8px"; // Consistent with CSS, but can be set here too
+      icon.className = iconClass; 
 
       btn.appendChild(icon);
       btn.appendChild(document.createTextNode(label));
-      btn.onclick = action;
+      btn.onclick = action; // 設定點擊事件
       if (btnClass) {
-        btn.classList.add(btnClass);
+        btn.classList.add(btnClass); // 添加樣式類別
       }
       return btn;
     }
     
+    // 頁面載入完成時執行
     document.addEventListener("DOMContentLoaded", () => {
-        fetchFilters();
-        updateFilterImagePreview(); // Set initial image for add row
-        updateNewFilterExpirationPreview(); // Calculate initial expiration if date/lifespan are pre-filled
+        fetchFilters(); // 載入所有濾心資料
+        updateFilterImagePreview(); // 設定新增行的預設圖片
+        // 設定今天的日期為預設的上次更換日期 (HTML input type="date" 的預設值)
+        document.getElementById("filter-date").value = new Date().toISOString().split('T')[0];
+        updateNewFilterExpirationPreview(); // 計算並顯示預設的到期日期
 
-        // Add event listeners for dynamic expiration date calculation in add row
+        // 為新增行的日期和壽命選擇器添加事件監聽器，即時更新到期日期預覽
         document.getElementById("filter-date").addEventListener("change", updateNewFilterExpirationPreview);
         document.getElementById("filter-lifespan").addEventListener("change", updateNewFilterExpirationPreview);
         document.getElementById("filter-type").addEventListener("change", () => {
-            updateFilterImagePreview();
-            // No need to call updateNewFilterExpirationPreview here as it doesn't depend on filter type
+            updateFilterImagePreview(); // 濾心類型改變時更新圖片
+            // updateNewFilterExpirationPreview(); // 濾心類型不影響到期日期計算，故不需在此呼叫
         });
     });
   </script>
