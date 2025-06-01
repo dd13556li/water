@@ -1,377 +1,19 @@
 /* style.css */
-
-/* 通用樣式 */
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: Arial, sans-serif;
     margin: 0;
     padding: 20px;
     background-color: #f4f7f6;
     color: #333;
-    line-height: 1.6;
 }
 
 h1 {
+    text-align: center;
     color: #2c3e50;
-    text-align: center;
-    margin-bottom: 25px;
-    font-size: 2.5em;
-    padding-bottom: 10px;
-    border-bottom: 2px solid #e0e0e0;
-}
-
-h1 .fas {
-    margin-right: 10px;
-    color: #3498db;
-}
-
-/* 主要內容容器 */
-#main-content {
-    max-width: 1000px;
-    margin: 30px auto;
-    background-color: #ffffff;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
-    animation: fadeIn 0.8s ease-out;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* 表格樣式 */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 25px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-}
-
-th, td {
-    border: 1px solid #e0e0e0;
-    padding: 15px;
-    text-align: center;
-}
-
-thead {
-    background-color: #3498db;
-    color: white;
-}
-
-th {
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-tr:nth-child(even) {
-    background-color: #f8f8f8;
-}
-
-tr:hover {
-    background-color: #eaf6fd;
-    transition: background-color 0.3s ease;
-}
-
-/* 按鈕樣式 */
-button {
-    background-color: #3498db;
-    color: white;
-    border: none;
-    padding: 10px 18px;
-    margin: 5px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 0.95em;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-button:hover {
-    background-color: #2980b9;
-    transform: translateY(-2px);
-}
-
-button .fas,
-button .far {
-    margin-right: 8px;
-}
-
-.btn-update {
-    background-color: #27ae60;
-}
-
-.btn-update:hover {
-    background-color: #229954;
-}
-
-.btn-delete {
-    background-color: #e74c3c;
-}
-
-.btn-delete:hover {
-    background-color: #c0392b;
-}
-
-/* 新增濾心行樣式 */
-#new-filter-row {
-    background-color: #ecf0f1;
-}
-
-#new-filter-row select,
-#new-filter-row input[type="date"],
-#new-filter-row input[type="text"] {
-    width: calc(100% - 20px);
-    padding: 10px;
-    margin: 5px 0;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    box-sizing: border-box;
-    font-size: 1em;
-}
-
-#new-filter-row button {
-    background-color: #f39c12;
-}
-
-#new-filter-row button:hover {
-    background-color: #e67e22;
-}
-
-/* 濾心圖片 */
-.filter-img {
-    width: 50px;
-    height: 50px;
-    vertical-align: middle;
-    margin-right: 10px;
-    border-radius: 5px;
-    object-fit: cover;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-/* 狀態顏色 */
-.status-expired {
-    background-color: #ffe0e0; /* 淺紅色背景 */
-    color: #e74c3c; /* 紅色文字 */
-    font-weight: bold;
-}
-
-.status-warning {
-    background-color: #fffacd; /* 檸檬綢色背景 */
-    color: #e67e22; /* 橘色文字 */
-    font-weight: bold;
-}
-
-.remaining-days {
-    font-weight: bold;
-}
-
-/* style.css */
-
-/* ... 您現有的 CSS 樣式 ... */
-
-/* 濾心狀態顏色 */
-.status-ok {
-    background-color: #e6ffe6; /* 淺綠色，表示正常 */
-    color: #28a745; /* 深綠色文字 */
-}
-
-.status-warning {
-    background-color: #fffacd; /* 淺黃色，表示即將到期 */
-    color: #e67e22; /* 橘色文字 */
-}
-
-.status-expired {
-    background-color: #ffe0e0; /* 淺紅色，表示已到期 */
-    color: #dc3545; /* 紅色文字 */
-    font-weight: bold; /* 更粗的字體強調 */
-}
-
-/* 確保這些狀態顏色樣式在您的表格行 hover 樣式之後，以確保優先級 */
-tr.status-ok:hover {
-    background-color: #d4f8d4;
-}
-
-tr.status-warning:hover {
-    background-color: #fff1c0;
-}
-
-tr.status-expired:hover {
-    background-color: #ffcccc;
-}
-
-
-/* 新增濾心區塊的基礎樣式 */
-#add-filter-section {
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 20px; /* 與下方表格保持距離 */
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-#add-filter-section h2 {
-    color: #333;
-    margin-top: 0;
     margin-bottom: 20px;
-    font-size: 1.5em;
-    text-align: center;
 }
 
-.add-filter-input-group {
-    display: flex;
-    flex-direction: column; /* 讓 label 和 input 垂直排列 */
-    margin-bottom: 15px;
-}
-
-.add-filter-input-group label {
-    font-weight: bold;
-    margin-bottom: 5px;
-    color: #555;
-}
-
-.add-filter-input-group select,
-.add-filter-input-group input[type="date"],
-.add-filter-input-group input[type="text"] {
-    width: 100%; /* 讓輸入框佔滿可用寬度 */
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box; /* 確保內邊距和邊框包含在寬度內 */
-}
-
-/* 針對濾心圖片預覽的樣式 */
-#add-filter-section .filter-img {
-    max-width: 50px; /* 適當調整圖片大小 */
-    height: auto;
-    vertical-align: middle;
-    margin-left: 10px; /* 與下拉選單間隔 */
-}
-
-/* 新增按鈕的樣式 (讓它更顯眼) */
-.btn-add-large {
-    width: 100%;
-    padding: 12px 20px;
-    background-color: #28a745; /* 綠色 */
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1.1em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px; /* 圖標與文字間的間距 */
-    transition: background-color 0.3s ease;
-}
-
-.btn-add-large:hover {
-    background-color: #218838;
-}
-
-/* 濾心狀態顏色 */
-.status-ok {
-    background-color: #e6ffe6; /* 淺綠色，表示正常 */
-    color: #28a745; /* 深綠色文字 */
-}
-
-.status-warning {
-    background-color: #fffacd; /* 淺黃色，表示即將到期 */
-    color: #e67e22; /* 橘色文字 */
-}
-
-.status-expired {
-    background-color: #ffe0e0; /* 淺紅色，表示已到期 */
-    color: #dc3545; /* 紅色文字 */
-    font-weight: bold; /* 更粗的字體強調 */
-}
-
-/* 確保這些狀態顏色樣式在您的表格行 hover 樣式之後，以確保優先級 */
-tr.status-ok:hover {
-    background-color: #d4f8d4;
-}
-
-tr.status-warning:hover {
-    background-color: #fff1c0;
-}
-
-tr.status-expired:hover {
-    background-color: #ffcccc;
-}
-
-
-/* 手機適配：將表格在小螢幕上轉換為卡片式佈局 */
-@media (max-width: 768px) {
-    /* ... (您現有的媒體查詢內部樣式，例如 table, thead, tbody, td, tr 的樣式) ... */
-
-    /* 確保濾心名稱圖片和文字的間距 */
-    td:first-child { /* 這是濾心名稱那一個 td */
-        display: flex; /* 使用 flexbox 佈局 */
-        align-items: center; /* 垂直居中對齊 */
-        justify-content: flex-start; /* 從左邊開始排列 */
-        padding-left: 6px; /* 適當的左填充 */
-        font-weight: bold;
-        color: #333;
-    }
-
-    td:first-child .filter-img { /* 濾心圖片的樣式 */
-        max-width: 40px; /* 稍微調整圖片大小，使其更適合卡片 */
-        height: auto;
-        margin-right: 8px; /* 圖片與文字之間適當的間距 */
-        min-width: 40px; /* 確保圖片有最小寬度，避免過小 */
-    }
-
-    .filter-name-text { /* 濾心名稱文本的樣式 (針對步驟1中新增的 span) */
-        flex-grow: 1; /* 讓文本佔據剩餘空間 */
-        min-width: 0; /* 允許文本在必要時收縮，但不會完全消失 */
-        white-space: normal; /* 允許文本換行 */
-        overflow: hidden; /* 隱藏溢出文本 */
-        text-overflow: ellipsis; /* 對溢出文本顯示省略號 */
-        word-break: break-word; /* 允許長單詞在必要時斷行 */
-        text-align: left; /* 確保文本左對齊 */
-    }
-
-    /* 調整其他 td 的樣式，讓標籤和內容對齊更整齊 */
-    td {
-        /* ... 您現有的 td 樣式 ... */
-        text-align: left; /* 讓所有 data-label 後的內容都左對齊，保持一致性 */
-        padding-left: 15px; /* 調整左填充，確保內容不會太靠近邊緣 */
-        padding-bottom: 5px; /* 每個屬性間的垂直間距 */
-    }
-
-    td:before {
-        /* ... 您現有的 td:before 樣式 ... */
-        width: auto; /* 讓標籤的寬度根據內容自動調整 */
-        min-width: 80px; /* 給標籤設定一個最小寬度，確保對齊 */
-        padding-right: 10px; /* 標籤與值之間的間距 */
-        font-weight: normal; /* 標籤字體可以稍微輕一點 */
-        color: #888; /* 標籤顏色可以稍微淡一點 */
-    }
-
-    td:last-child {
-        text-align: center; /* 操作按鈕居中 */
-        padding-left: 6px;
-        margin-top: 10px;
-        display: flex; /* 讓按鈕在小螢幕下橫向排列 */
-        justify-content: center; /* 居中對齊 */
-        flex-wrap: wrap; /* 允許按鈕換行 */
-    }
-
-    td:last-child button {
-        flex: 1 1 auto; /* 讓按鈕彈性成長，但允許縮小 */
-        margin: 5px; /* 按鈕間距 */
-        min-width: 90px; /* 確保按鈕不會太小 */
-        max-width: 120px; /* 限制按鈕最大寬度 */
-    }
-}
-/* ... 您現有的 CSS 樣式 ... */
-
-/* 登入容器樣式 (已存在於您的 HTML inline style，此處僅為完整性展示，您可以保持 HTML 中的內聯樣式) */
-/*
+/* 登入容器 */
 #login-container {
     display: flex;
     flex-direction: column;
@@ -410,58 +52,265 @@ tr.status-expired:hover {
 .hidden {
     display: none !important;
 }
-*/
 
-/* RWD 調整 */
+
+/* 新增濾心區塊的基礎樣式 (保留原樣) */
+#add-filter-section {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+#add-filter-section h2 {
+    color: #333;
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.5em;
+    text-align: center;
+}
+
+.add-filter-input-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+}
+
+.add-filter-input-group label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #555;
+}
+
+.add-filter-input-group select,
+.add-filter-input-group input[type="date"],
+.add-filter-input-group input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+#add-filter-section .filter-img {
+    max-width: 50px;
+    height: auto;
+    vertical-align: middle;
+    margin-left: 10px;
+}
+
+.btn-add-large {
+    width: 100%;
+    padding: 12px 20px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background-color 0.3s ease;
+}
+
+.btn-add-large:hover {
+    background-color: #218838;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-radius: 8px;
+}
+
+th, td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+}
+
+th {
+    background-color: #e8f0fe;
+    color: #333;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+tr:hover {
+    background-color: #f5f5f5;
+}
+
+.filter-img {
+    max-width: 40px;
+    height: auto;
+    vertical-align: middle;
+    margin-right: 10px;
+    border-radius: 4px;
+}
+
+.btn-update, .btn-delete {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    display: inline-flex; /* 使用 inline-flex 讓圖示和文字對齊 */
+    align-items: center;
+    justify-content: center;
+    gap: 5px; /* 圖示與文字間的間距 */
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.btn-update {
+    background-color: #007bff;
+    color: white;
+    margin-right: 5px;
+}
+
+.btn-update:hover {
+    background-color: #0056b3;
+    transform: translateY(-1px);
+}
+
+.btn-delete {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-delete:hover {
+    background-color: #c82333;
+    transform: translateY(-1px);
+}
+
+/* 濾心狀態文字顏色 */
+.status-ok-text {
+    color: #28a745; /* 深綠色 */
+    font-weight: bold;
+}
+
+.status-warning-text {
+    color: #e67e22; /* 橘色 */
+    font-weight: bold;
+}
+
+.status-expired-text {
+    color: #dc3545; /* 紅色 */
+    font-weight: bold;
+}
+
+/* 確保 tr 不會有背景色，只靠文字顏色 */
+tr.status-ok, tr.status-warning, tr.status-expired {
+    background-color: #fff !important; /* 保持白色背景 */
+    color: #333 !important; /* 保持預設文字顏色 */
+}
+tr.status-ok:hover, tr.status-warning:hover, tr.status-expired:hover {
+    background-color: #f0f0f0 !important; /* 統一一個較淺的 hover 顏色 */
+}
+
+/* --- 手機適配：@media (max-width: 768px) 內部 --- */
 @media (max-width: 768px) {
-    body {
-        padding: 10px;
-    }
-    #main-content {
-        padding: 15px;
-        margin: 15px auto;
-    }
     table, thead, tbody, th, td, tr {
-        display: block;
+        display: block; /* 讓表格元素像區塊一樣排列 */
     }
+
     thead tr {
         position: absolute;
-        top: -9999px;
+        top: -9999px; /* 隱藏表格頭 */
         left: -9999px;
     }
+
     tr {
-        margin-bottom: 15px;
-        border: 1px solid #e0e0e0;
+        border: 1px solid #ccc;
+        margin-bottom: 10px;
+        background-color: #fff; /* 為每個卡片設定背景 */
         border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        padding: 15px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        display: flex; /* 使用 flexbox 佈局卡片內容 */
+        flex-direction: column; /* 垂直排列 */
     }
+
+    /* 調整 td 的顯示，讓 data-label 和內容分行 */
     td {
         border: none;
         position: relative;
-        padding-left: 50%;
+        padding-left: 15px; /* 左側填充 */
+        padding-right: 15px; /* 右側填充 */
+        padding-top: 5px; /* 標籤與內容之間的間距 */
+        padding-bottom: 5px; /* 每個屬性之間的垂直間距 */
+        text-align: left; /* 所有內容左對齊 */
+        display: block; /* 確保每個 td 獨立一行 */
+        width: 100%; /* 每個 td 佔滿一行 */
+        box-sizing: border-box; /* 包含內邊距和邊框在寬度內 */
+    }
+
+    td:before {
+        content: attr(data-label);
+        display: block; /* 讓 label 獨立一行 */
+        position: static; /* 不再絕對定位 */
+        width: auto;
+        padding-right: 0; /* 移除右填充 */
+        margin-bottom: 5px; /* 標籤與值之間的間距 */
+        white-space: nowrap;
+        text-align: left;
+        font-weight: normal; /* 標籤字體可以稍微輕一點 */
+        color: #888; /* 標籤顏色可以稍微淡一點 */
+    }
+
+    /* 濾心名稱部分 (第 2 列：圖片 + 中文名稱) */
+    td:first-child .filter-name-content {
+        display: flex;
+        flex-direction: row; /* 讓圖片和文字水平排列 */
+        align-items: center; /* 垂直居中 */
+        justify-content: center; /* **水平置中** */
+        width: 100%; /* 佔滿 td 的寬度 */
+        margin-top: 5px; /* 與上面的 "濾心名稱:" 標籤間距 */
+    }
+
+    td:first-child .filter-img {
+        max-width: 50px; /* 稍微大一點點 */
+        height: auto;
+        margin-right: 10px; /* 圖片和文字間的間距 */
+        min-width: 50px; /* 確保圖片有最小寬度 */
+    }
+
+    .filter-name-text {
+        flex-grow: 1; /* 讓文字佔據剩餘空間 */
+        text-align: left; /* 確保文字左對齊 */
+        white-space: normal; /* 允許換行 */
+        word-break: break-word; /* 允許長單詞斷行 */
+        font-size: 1.1em; /* 稍微大一點點 */
+        color: #333;
+    }
+
+    /* 確保 "操作:" 標籤也左對齊 */
+    td[data-label="操作:"]:before {
         text-align: left;
     }
-    td:before {
-        position: absolute;
-        top: 0px;
-        left: 6px;
-        width: 45%;
-        padding-right: 10px;
-        white-space: nowrap;
-        font-weight: bold;
-        content: attr(data-label); /* 動態顯示標籤 */
-    }
-    /* 為每個 td 添加 data-label 屬性以在手機上顯示標題 */
-    td:nth-of-type(1):before { content: "濾心名稱:"; }
-    td:nth-of-type(2):before { content: "上次更換日期:"; }
-    td:nth-of-type(3):before { content: "剩餘壽命:"; }
-    td:nth-of-type(4):before { content: "到期日期:"; }
-    td:nth-of-type(5):before { content: "操作:"; }
 
-    #new-filter-row td {
-        padding-left: 15px; /* 新增行不需要 data-label */
+    /* 操作按鈕部分 (第 7 列：更新、刪除按鈕) */
+    td:last-child .filter-ops-content {
+        display: flex;
+        flex-direction: row; /* 水平排列按鈕 */
+        flex-wrap: wrap; /* 允許按鈕換行 */
+        justify-content: center; /* **水平置中** */
+        gap: 10px; /* 按鈕之間的間距 */
+        width: 100%; /* 佔滿 td 的寬度 */
+        margin-top: 10px; /* 與上面的 "操作:" 標籤間距 */
     }
-    #new-filter-row td:before {
-        content: none;
+
+    td:last-child button {
+        flex: 1 1 auto; /* 讓按鈕彈性成長，但允許縮小 */
+        min-width: 100px; /* 確保按鈕不會太小 */
+        max-width: 150px; /* 限制按鈕最大寬度 */
+        padding: 8px 12px; /* 調整按鈕內邊距 */
+        font-size: 0.95em; /* 調整字體大小 */
     }
 }
