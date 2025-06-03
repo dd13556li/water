@@ -3,7 +3,6 @@ from flask_cors import CORS, cross_origin
 import json
 import datetime
 import os
-import psycopg2 # 導入 psycopg2
 from flask_jwt_extended import create_access_token, jwt_required, JWTManager, get_jwt_identity
 
 # --- 全局變數定義 ---
@@ -11,7 +10,10 @@ DEFAULT_FILTERS = [
     {"name": "UF-591", "last_replace": "2024-06-01", "lifespan": 90},
     {"name": "UF-592", "last_replace": "2024-06-01", "lifespan": 180}
 ]
-# --- 全局變數定義結束 ---
+
+# JSON 檔案路徑
+# 在 Render 上，這個路徑會是容器內的文件系統，不是持久化的
+FILTERS_FILE = "filters.json" 
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
@@ -26,70 +28,63 @@ USERS = {
     "admin": "hxcs04water" # **請務必使用更複雜且只有您知道的密碼**
 }
 
-# --- 資料庫操作函式 ---
-# 從環境變數獲取資料庫 URL (Render 為連結的資料庫提供此變數)
-DATABASE_URL = os.environ.get("DATABASE_URL")
-if not DATABASE_URL:
-    print("CRITICAL ERROR: DATABASE_URL 環境變數未設定！如果是在本地運行，請確保已設置環境變數或在代碼中提供本地DB連接字串。")
-    # 如果您需要在本地測試，可以在這裡設定一個本地 PostgreSQL URL
-    # DATABASE_URL = "postgresql://user:password@localhost:5432/your_db_name"
+# --- JSON 檔案操作函式 ---
 
+def load_filters():
+    """從 JSON 檔案載入濾心資料"""
+    if not os.path.exists(FILTERS_FILE) or os.stat(FILTERS_FILE).st_size == 0:
+        print(f"DEBUG: {FILTERS_FILE} 不存在或為空，將載入預設濾心。")
+        return DEFAULT_FILTERS[:] # 返回副本以避免修改預設列表
+    try:
+        with open(FILTERS_FILE, 'r', encoding='utf-8') as f:
+            filters = json.load(f)
+            # 確保載入的 filters 是一個列表，以防檔案被損壞
+            if not isinstance(filters, list):
+                print(f"ERROR: {FILTERS_FILE} 內容無效，將使用預設濾心。")
+                return DEFAULT_FILTERS[:]
+            return filters
+    except json.JSONDecodeError as e:
+        print(f"ERROR: 解碼 {FILTERS_FILE} 失敗: {e}。將使用預設濾心。")
+        return DEFAULT_FILTERS[:]
+    except Exception as e:
+        print(f"ERROR: 讀取 {FILTERS_FILE} 時發生錯誤: {e}。將使用預設濾心。")
+        return DEFAULT_FILTERS[:]
 
-def get_db():
-    db = getattr(g, '_database', None)
-    if db is None:
-        if not DATABASE_URL:
-            raise Exception("DATABASE_URL 未設定！無法連接到資料庫。")
-        db = g._database = psycopg2.connect(DATABASE_URL)
-    return db
+def save_filters(filters):
+    """將濾心資料儲存到 JSON 檔案"""
+    try:
+        with open(FILTERS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(filters, f, indent=4, ensure_ascii=False)
+        print(f"DEBUG: 濾心資料已成功寫入到 {FILTERS_FILE}。")
+    except Exception as e:
+        print(f"ERROR: 寫入 {FILTERS_FILE} 失敗: {e}")
 
-def init_db():
-    print("DEBUG: 嘗試初始化資料庫 (PostgreSQL)...")
-    with app.app_context():
-        db = get_db()
-        cursor = db.cursor()
+def init_data_file():
+    """在應用程式啟動時初始化資料檔案 (如果不存在或為空)"""
+    print(f"DEBUG: 檢查並初始化 {FILTERS_FILE}...")
+    if not os.path.exists(FILTERS_FILE) or os.stat(FILTERS_FILE).st_size == 0:
+        print(f"DEBUG: {FILTERS_FILE} 不存在或為空，創建並寫入預設濾心。")
+        save_filters(DEFAULT_FILTERS)
+    else:
+        # 嘗試載入並驗證檔案內容
         try:
-            # 建立資料表時，移除 display_order 欄位
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS filters (
-                    id SERIAL PRIMARY KEY,
-                    name TEXT NOT NULL UNIQUE,
-                    last_replace TEXT NOT NULL,
-                    lifespan INTEGER NOT NULL
-                )
-            ''')
-            db.commit()
-            print("DEBUG: 資料表 'filters' 檢查/建立成功。")
-
-            cursor.execute("SELECT COUNT(*) FROM filters")
-            if cursor.fetchone()[0] == 0:
-                print("DEBUG: 資料庫為空，開始插入預設濾心資料。")
-                for f in DEFAULT_FILTERS:
-                    cursor.execute(
-                        "INSERT INTO filters (name, last_replace, lifespan) VALUES (%s, %s, %s)",
-                        (f["name"], f["last_replace"], f["lifespan"])
-                    )
-                db.commit()
-                print("DEBUG: 資料庫已初始化並載入預設濾心資料。")
-            else:
-                print("DEBUG: 資料庫已存在資料，跳過預設資料插入。")
-        except psycopg2.Error as e: 
-            print(f"ERROR: 初始化資料庫時發生 PostgreSQL 錯誤: {e}")
-            raise
+            with open(FILTERS_FILE, 'r', encoding='utf-8') as f:
+                filters = json.load(f)
+                if not isinstance(filters, list):
+                    print(f"WARNING: {FILTERS_FILE} 內容無效，將用預設濾心覆蓋。")
+                    save_filters(DEFAULT_FILTERS)
+                else:
+                    print(f"DEBUG: {FILTERS_FILE} 存在且有效。")
+        except json.JSONDecodeError:
+            print(f"WARNING: {FILTERS_FILE} 格式錯誤，將用預設濾心覆蓋。")
+            save_filters(DEFAULT_FILTERS)
         except Exception as e:
-            print(f"CRITICAL ERROR: 初始化資料庫時發生未知錯誤: {e}")
-            raise
+            print(f"WARNING: 讀取 {FILTERS_FILE} 時發生錯誤 {e}，將用預設濾心覆蓋。")
+            save_filters(DEFAULT_FILTERS)
 
-@app.teardown_appcontext
-def close_connection(exception):
-    db = getattr(g, '_database', None)
-    if db is not None:
-        db.close()
-        print("DEBUG: 資料庫連接已關閉。")
-
-# 確保 init_db 在應用程式啟動時被呼叫
+# 確保資料檔案在應用程式啟動時被初始化
 with app.app_context():
-    init_db()
+    init_data_file()
 
 # --- 認證路由 ---
 @app.route("/login", methods=["POST", "OPTIONS"])
@@ -124,17 +119,7 @@ def get_filters():
     current_user = get_jwt_identity()
     print(f"DEBUG: 用戶 '{current_user}' 收到 /filters 請求。")
     try:
-        db = get_db()
-        cursor = db.cursor()
-        # 這裡不再按 display_order 排序，預設按 id 排序
-        cursor.execute("SELECT name, last_replace, lifespan FROM filters") 
-        filters = []
-        for row in cursor.fetchall():
-            filters.append({
-                "name": row[0],
-                "last_replace": row[1],
-                "lifespan": row[2]
-            })
+        filters = load_filters()
         print(f"DEBUG: 成功獲取 {len(filters)} 筆濾心資料。")
         return jsonify(filters)
     except Exception as e:
@@ -163,29 +148,23 @@ def add_filter():
         print(f"DEBUG: lifespan 無法轉換為數字: {data['lifespan']}")
         return jsonify({"message": "lifespan 必須是有效的數字"}), 400
 
-    db = get_db()
-    cursor = db.cursor()
-    try:
-        cursor.execute("SELECT COUNT(*) FROM filters WHERE name = %s", (data["name"],))
-        if cursor.fetchone()[0] > 0:
-            print(f"DEBUG: 濾心名稱 '{data['name']}' 已存在。")
-            return jsonify({"message": f"濾心名稱 '{data['name']}' 已存在"}), 409
-        
-        # 不再設定 display_order
-        cursor.execute(
-            "INSERT INTO filters (name, last_replace, lifespan) VALUES (%s, %s, %s)",
-            (data["name"], data["last_replace"], lifespan_int)
-        )
-        db.commit()
-        print(f"DEBUG: 濾心 '{data['name']}' 已成功新增。")
-        return jsonify({"message": "濾心已成功新增", "filter": {"name": data["name"], "last_replace": data["last_replace"], "lifespan": lifespan_int}}), 201
-    except psycopg2.Error as e: 
-        print(f"ERROR: 新增濾心時發生 PostgreSQL 錯誤: {e}")
-        return jsonify({"message": f"新增濾心時發生錯誤: {e}"}), 500
-    except Exception as e:
-        print(f"ERROR: 新增濾心時發生未知錯誤: {e}")
-        return jsonify({"message": f"新增濾心時發生錯誤: {e}"}), 500
-
+    filters = load_filters()
+    # 檢查濾心名稱是否已存在
+    if any(f['name'] == data['name'] for f in filters):
+        print(f"DEBUG: 濾心名稱 '{data['name']}' 已存在。")
+        return jsonify({"message": f"濾心名稱 '{data['name']}' 已存在"}), 409
+    
+    new_filter = {
+        "name": data["name"],
+        "last_replace": data["last_replace"],
+        "lifespan": lifespan_int
+    }
+    filters.append(new_filter)
+    save_filters(filters)
+    
+    print(f"DEBUG: 濾心 '{data['name']}' 已成功新增。")
+    return jsonify({"message": "濾心已成功新增", "filter": new_filter}), 201
+    
 
 @app.route("/update", methods=["POST"])
 @jwt_required() # 保護這個路由
@@ -198,41 +177,26 @@ def update_filter():
         print("DEBUG: 更新請求缺少 'name' 欄位。")
         return jsonify({"message": "請提供濾心名稱 (name) 以進行更新"}), 400
 
-    db = get_db()
-    cursor = db.cursor()
-    
+    filters = load_filters()
+    filter_name_to_update = data["name"]
+    found = False
+    updated_filter = None
     current_date = datetime.datetime.now().strftime("%Y-%m-%d")
-    
-    try:
-        cursor.execute(
-            "UPDATE filters SET last_replace = %s WHERE name = %s",
-            (current_date, data["name"])
-        )
-        db.commit()
 
-        if cursor.rowcount == 0:
-            print(f"DEBUG: 濾心 '{data['name']}' 未找到，無法更新。")
-            return jsonify({"message": "濾心未找到"}), 404
-        
-        cursor.execute("SELECT name, last_replace, lifespan FROM filters WHERE name = %s", (data["name"],))
-        updated_filter_row = cursor.fetchone() 
-        if updated_filter_row:
-            updated_filter = {
-                "name": updated_filter_row[0],
-                "last_replace": updated_filter_row[1],
-                "lifespan": updated_filter_row[2]
-            }
-            print(f"DEBUG: 濾心 '{data['name']}' 更新成功。")
-            return jsonify({"message": "更新成功", "updated": updated_filter})
-        else:
-            print("ERROR: 更新成功但無法重新查詢濾心資訊。")
-            return jsonify({"message": "更新成功但無法重新查詢濾心資訊"}), 200
-    except psycopg2.Error as e: 
-        print(f"ERROR: 更新濾心失敗: {e}")
-        return jsonify({"message": f"更新濾心失敗: {e}"}), 500
-    except Exception as e:
-        print(f"ERROR: 更新濾心失敗: {e}")
-        return jsonify({"message": f"更新濾心失敗: {e}"}), 500
+    for i, f in enumerate(filters):
+        if f['name'] == filter_name_to_update:
+            filters[i]['last_replace'] = current_date
+            updated_filter = filters[i]
+            found = True
+            break
+    
+    if found:
+        save_filters(filters)
+        print(f"DEBUG: 濾心 '{filter_name_to_update}' 更新成功。")
+        return jsonify({"message": "更新成功", "updated": updated_filter})
+    else:
+        print(f"DEBUG: 濾心 '{filter_name_to_update}' 未找到，無法更新。")
+        return jsonify({"message": "濾心未找到"}), 404
 
 @app.route("/delete", methods=["POST", "OPTIONS"])
 @cross_origin()
@@ -249,33 +213,22 @@ def delete_filter():
         print("DEBUG: 刪除請求缺少 'name' 欄位。")
         return jsonify({"message": "請提供要刪除的濾心名稱 (name)"}), 400
 
-    db = get_db()
-    cursor = db.cursor()
-    try:
-        cursor.execute("DELETE FROM filters WHERE name = %s", (data["name"],))
-        db.commit()
+    filters = load_filters()
+    filter_name_to_delete = data["name"]
+    original_count = len(filters)
+    
+    filters = [f for f in filters if f['name'] != filter_name_to_delete]
 
-        if cursor.rowcount == 0:
-            print(f"DEBUG: 濾心 '{data['name']}' 未找到，無法刪除。")
-            return jsonify({"message": f"濾心 '{data['name']}' 未找到"}), 404
-        
-        print(f"DEBUG: 濾心 '{data['name']}' 已刪除。")
-        return jsonify({"message": f"濾心 '{data['name']}' 已刪除"}), 200
-    except psycopg2.Error as e: 
-        print(f"ERROR: 刪除濾心失敗: {e}")
-        return jsonify({"message": f"刪除濾心失敗: {e}"}), 500
-    except Exception as e:
-        print(f"ERROR: 刪除濾心失敗: {e}")
-        return jsonify({"message": f"刪除濾心失敗: {e}"}), 500
-
-# 移除 /reorder-filters 端點
+    if len(filters) < original_count:
+        save_filters(filters)
+        print(f"DEBUG: 濾心 '{filter_name_to_delete}' 已刪除。")
+        return jsonify({"message": f"濾心 '{filter_name_to_delete}' 已刪除"}), 200
+    else:
+        print(f"DEBUG: 濾心 '{filter_name_to_delete}' 未找到，無法刪除。")
+        return jsonify({"message": f"濾心 '{filter_name_to_delete}' 未找到"}), 404
 
 if __name__ == "__main__":
     print("DEBUG: 正在直接運行 app.py 腳本 (本地開發模式)。")
-    with app.app_context():
-        try:
-            init_db()
-            print("DEBUG: 本地開發模式下資料庫初始化完成。")
-        except Exception as e:
-            print(f"CRITICAL ERROR: 本地開發模式下資料庫初始化失敗: {e}")
+    # 在本地開發時，確保資料檔案存在
+    init_data_file() 
     app.run(debug=True, port=5000)
