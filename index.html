@@ -100,7 +100,7 @@
           <th>濾心名稱</th>
           <th>上次更換日期</th>
           <th>剩餘壽命</th>
-          <th>到期日期</th>
+          <th>今天日期</th> <th>到期日期</th>
           <th>操作</th>
         </tr>
       </thead>
@@ -110,7 +110,7 @@
   </div>
 
   <script>
-    const apiBaseUrl = "https://water-2hc2.onrender.com";
+    const apiBaseUrl = "https://water-2hc2.onrender.com"; // 請替換為您的 Render 服務 URL
 
     // JWT 儲存的 key
     const JWT_TOKEN_KEY = "access_token";  
@@ -123,6 +123,20 @@
       "UF-504": { name: "UF-504 - 逆滲透薄膜", img: "504.png" },
       "UF-515": { name: "UF-515 - 椰殼顆粒活性碳濾芯", img: "515.png" }
     };
+
+    // --- 輔助函數：日期格式化 (新增或修改此函數) ---
+    function format_date_with_weekday(dateString) {
+        const date = new Date(dateString + "T00:00:00"); // 確保日期解釋為當地時間午夜
+        if (isNaN(date.getTime())) {
+            return dateString; // 無效日期直接返回原始字串
+        }
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+        const weekday = weekdays[date.getDay()];
+        return `${year}-${month}-${day} (星期${weekday})`;
+    }
 
     // --- 認證相關函數 ---
 
@@ -229,7 +243,8 @@
                 let lifespanDays = parseInt(lifespanSelect.value);
                 let expirationDate = new Date(lastReplaceDate);
                 expirationDate.setDate(lastReplaceDate.getDate() + lifespanDays);
-                expirationInput.value = expirationDate.toISOString().split('T')[0];
+                // 更新預計到期日期預覽的格式
+                expirationInput.value = format_date_with_weekday(expirationDate.toISOString().split('T')[0]);
             } catch (e) {
                 expirationInput.value = "計算錯誤";
                 console.error("Error calculating expiration date:", e);
@@ -244,7 +259,7 @@
       // 在發送請求前檢查是否已登入
       if (!isAuthenticated()) {
           console.log("未登入，跳過 fetchFilters。");
-          document.getElementById("filter-list").innerHTML = `<tr><td colspan="5" style="color: gray;">請先登入以查看濾心資料。</td></tr>`;
+          document.getElementById("filter-list").innerHTML = `<tr><td colspan="6" style="color: gray;">請先登入以查看濾心資料。</td></tr>`; // 調整 colspan
           return;
       }
 
@@ -272,6 +287,7 @@
 
           const today = new Date();
           today.setHours(0,0,0,0);
+          const todayFormatted = format_date_with_weekday(today.toISOString().split('T')[0]); // 獲取今天日期並格式化
 
           if (Array.isArray(data)) {
             data.forEach(filter => {
@@ -312,7 +328,7 @@
               tr.appendChild(tdName);
 
               // --- 上次更換日期 (第 3 列) ---
-              const tdLastReplace = createCell(filter.last_replace);
+              const tdLastReplace = createCell(filter.last_replace); // 不需格式化星期，保留原始日期格式
               tdLastReplace.setAttribute("data-label", "上次更換日期:"); 
               tr.appendChild(tdLastReplace);
 
@@ -329,12 +345,18 @@
               }
               tr.appendChild(remainingDaysCell);
 
-              // --- 到期日期 (第 5 列) ---
-              const tdExpirationDate = createCell(expirationDate.toISOString().split('T')[0]);
+              // --- 今天日期 (新增的第 5 列) ---
+              const tdTodayDate = createCell(todayFormatted);
+              tdTodayDate.setAttribute("data-label", "今天日期:");
+              tr.appendChild(tdTodayDate);
+
+
+              // --- 到期日期 (第 6 列，現在會包含星期) ---
+              const tdExpirationDate = createCell(format_date_with_weekday(expirationDate.toISOString().split('T')[0]));
               tdExpirationDate.setAttribute("data-label", "到期日期:"); 
               tr.appendChild(tdExpirationDate);
 
-              // --- 操作 (第 6 列標籤，第 7 列按鈕) ---
+              // --- 操作 (第 7 列標籤，第 8 列按鈕) ---
               const tdOps = document.createElement("td");
               tdOps.setAttribute("data-label", "操作:"); 
               
@@ -351,13 +373,13 @@
             });
           } else {
             console.error("API 回傳資料格式不正確，預期為陣列:", data);
-            filterList.innerHTML = `<tr><td colspan="5" style="color: red;">載入濾心資料失敗：伺服器回應格式不正確。</td></tr>`;
+            filterList.innerHTML = `<tr><td colspan="6" style="color: red;">載入濾心資料失敗：伺服器回應格式不正確。</td></tr>`; // 調整 colspan
           }
         })
         .catch(error => {
           console.error("取得濾心資料失敗:", error);
           const filterList = document.getElementById("filter-list");
-          filterList.innerHTML = `<tr><td colspan="5" style="color: red;">載入濾心資料失敗：${error.message || '請檢查網絡或伺服器。'}</td></tr>`;
+          filterList.innerHTML = `<tr><td colspan="6" style="color: red;">載入濾心資料失敗：${error.message || '請檢查網絡或伺服器。'}</td></tr>`; // 調整 colspan
         });
     }
 
@@ -494,9 +516,13 @@
         // 根據是否已登入顯示或隱藏內容
         toggleContentVisibility();  
 
-        updateFilterImagePreview();
-        document.getElementById("filter-date").value = new Date().toISOString().split('T')[0];
-        updateNewFilterExpirationPreview();
+        // 初始化新增濾心的日期預覽
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = (today.getMonth() + 1).toString().padStart(2, '0');
+        const day = today.getDate().toString().padStart(2, '0');
+        document.getElementById("filter-date").value = `${year}-${month}-${day}`;
+        updateNewFilterExpirationPreview(); // 首次載入時計算預計到期日期
 
         document.getElementById("filter-date").addEventListener("change", updateNewFilterExpirationPreview);
         document.getElementById("filter-lifespan").addEventListener("change", updateNewFilterExpirationPreview);
