@@ -125,13 +125,11 @@
       "UF-515": { name: "UF-515 - 椰殼顆粒活性碳濾芯", img: "515.png" }
     };
 
-    // --- 輔助函數：日期格式化 ---
-    // 這個函數現在將負責將 YYYY-MM-DD 字符串轉換為帶有星期的本地化日期字符串
+    // --- 輔助函數：日期格式化 (移到全局作用域) ---
     function format_date_with_weekday(dateString) {
-        // 使用 new Date(dateString + 'T00:00:00') 確保日期解析為本地午夜，避免時區偏差
         const date = new Date(dateString + 'T00:00:00'); 
         if (isNaN(date.getTime())) {
-            return dateString; // 無效日期直接返回原始字串
+            return dateString;
         }
         const year = date.getFullYear();
         const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -141,34 +139,31 @@
         return `${year}-${month}-${day} (星期${weekday})`;
     }
 
-    // --- 認證相關函數 ---
+    // --- 認證相關函數 (移到全局作用域) ---
 
-    // 檢查使用者是否已登入
     function isAuthenticated() {
         return localStorage.getItem(JWT_TOKEN_KEY) !== null;
     }
 
-    // 顯示或隱藏登入介面和主要內容
     function toggleContentVisibility() {
         const loginContainer = document.getElementById("login-container");
         const mainContent = document.getElementById("main-content");
         if (isAuthenticated()) {
             loginContainer.classList.add("hidden");
             mainContent.classList.remove("hidden");
-            fetchFilters(); // 登入後立即載入濾心資料
+            fetchFilters();
         } else {
             loginContainer.classList.remove("hidden");
             mainContent.classList.add("hidden");
         }
     }
 
-    // 執行登入請求
     async function performLogin() {
         const username = document.getElementById("username").value;
         const password = document.getElementById("password").value;
         const loginMessage = document.getElementById("login-message");
 
-        loginMessage.textContent = ""; // 清空之前的訊息
+        loginMessage.textContent = "";
 
         try {
             const response = await fetch(`${apiBaseUrl}/login`, {
@@ -180,7 +175,7 @@
             if (response.ok) {
                 const data = await response.json();
                 localStorage.setItem(JWT_TOKEN_KEY, data.access_token);
-                toggleContentVisibility(); // 登入成功，切換顯示內容
+                toggleContentVisibility();
             } else {
                 const errorData = await response.json();
                 loginMessage.textContent = errorData.message || "登入失敗，請檢查帳號密碼。";
@@ -192,16 +187,13 @@
         }
     }
 
-    // 執行登出
     function performLogout() {
         localStorage.removeItem(JWT_TOKEN_KEY);
         alert("您已登出。");
-        toggleContentVisibility(); // 登出後切換回登入介面
-        // 清空列表，避免未認證用戶看到資料
+        toggleContentVisibility();
         document.getElementById("filter-list").innerHTML = '';
     }
 
-    // --- 輔助函數：獲取帶認證的 headers ---
     function getAuthHeaders() {
         const token = localStorage.getItem(JWT_TOKEN_KEY);
         if (!token) {
@@ -213,8 +205,7 @@
         };
     }
 
-
-    // --- 其他輔助函數 ---
+    // --- 其他輔助函數 (移到全局作用域) ---
 
     function getFilterImageUrl(modelNumber) {
       const model = modelNumber.trim().toUpperCase();
@@ -238,7 +229,6 @@
 
         if (dateInput.value && lifespanSelect.value) {
             try {
-                // 使用 new Date(dateInput.value + "T00:00:00") 來確保按照本地時區解析
                 let lastReplaceDate = new Date(dateInput.value + "T00:00:00");  
                 if (isNaN(lastReplaceDate.getTime())) {
                     expirationInput.value = "日期無效";
@@ -248,7 +238,6 @@
                 let expirationDate = new Date(lastReplaceDate);
                 expirationDate.setDate(lastReplaceDate.getDate() + lifespanDays);
                 
-                // 獲取 YYYY-MM-DD 格式的日期字串，然後再用 format_date_with_weekday 格式化
                 const expirationDateStr = expirationDate.toISOString().split('T')[0];
                 expirationInput.value = format_date_with_weekday(expirationDateStr);
             } catch (e) {
@@ -260,7 +249,7 @@
         }
     }
 
-    // --- 核心功能：取得濾心資料並顯示 ---
+    // --- 核心功能：取得濾心資料並顯示 (移到全局作用域) ---
     function fetchFilters() {
       if (!isAuthenticated()) {
           console.log("未登入，跳過 fetchFilters。");
@@ -290,31 +279,27 @@
           const filterList = document.getElementById("filter-list");
           filterList.innerHTML = "";
 
-          // 獲取今天的日期 (在本地時區)
           const today = new Date();
-          today.setHours(0,0,0,0); // 清除時間部分
+          today.setHours(0,0,0,0);
           const todayFormatted = format_date_with_weekday(today.toISOString().split('T')[0]); 
 
           if (Array.isArray(data)) {
             data.forEach(filter => {
               const tr = document.createElement("tr");
 
-              // 將後端傳來的 last_replace (YYYY-MM-DD) 轉換為 Date 對象，並確保為本地午夜
               let lastReplaceDate = new Date(filter.last_replace + "T00:00:00");  
               if (isNaN(lastReplaceDate.getTime())) {
                 console.error(`無效的上次更換日期: ${filter.last_replace}`);
-                lastReplaceDate = today; // 無效日期則以今天代替
+                lastReplaceDate = today;
               }
 
               let expirationDate = new Date(lastReplaceDate);
               expirationDate.setDate(lastReplaceDate.getDate() + Number(filter.lifespan));
 
-              // 計算剩餘天數時，確保都使用日期對象，並且都設置到午夜
               let remainingDays = Math.ceil((expirationDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
               remainingDays = Math.max(0, remainingDays);
 
 
-              // --- 濾心名稱 ---
               const tdName = document.createElement("td");
               tdName.setAttribute("data-label", "濾心名稱:"); 
               const nameContentDiv = document.createElement("div");
@@ -331,13 +316,10 @@
               tdName.appendChild(nameContentDiv); 
               tr.appendChild(tdName);
 
-              // --- 上次更換日期 (格式化，現在會顯示星期) ---
-              // 注意這裡使用 format_date_with_weekday 處理後端傳來的 YYYY-MM-DD 字符串
               const tdLastReplace = createCell(format_date_with_weekday(filter.last_replace));
               tdLastReplace.setAttribute("data-label", "上次更換日期:"); 
               tr.appendChild(tdLastReplace);
 
-              // --- 剩餘壽命 (顏色在此添加) ---
               const remainingDaysCell = createCell(`${remainingDays} 天`);
               remainingDaysCell.setAttribute("data-label", "剩餘壽命:"); 
               if (remainingDays <= 0) {
@@ -349,18 +331,15 @@
               }
               tr.appendChild(remainingDaysCell);
 
-              // --- 今天日期 ---
               const tdTodayDate = createCell(todayFormatted);
               tdTodayDate.setAttribute("data-label", "今天日期:");
               tr.appendChild(tdTodayDate);
 
 
-              // --- 到期日期 (已格式化，現在會包含星期) ---
               const tdExpirationDate = createCell(format_date_with_weekday(expirationDate.toISOString().split('T')[0]));
               tdExpirationDate.setAttribute("data-label", "到期日期:"); 
               tr.appendChild(tdExpirationDate);
 
-              // --- 操作 ---
               const tdOps = document.createElement("td");
               tdOps.setAttribute("data-label", "操作:"); 
               const opsContentDiv = document.createElement("div");
@@ -384,17 +363,120 @@
         });
     }
 
-    // --- 新增、更新、刪除濾心函數 (保持不變) ---
-    // ... (addFilter, updateFilter, deleteFilter 保持不變) ...
+    // --- 新增濾心 (移到全局作用域) ---
+    function addFilter() {
+      const name = document.getElementById("filter-type").value.trim();  
+      const lastReplace = document.getElementById("filter-date").value;
+      const lifespan = parseInt(document.getElementById("filter-lifespan").value);
 
-    // 輔助函數：創建表格單元格
+      if (!lastReplace) {
+        alert("請選擇上次更換日期！");
+        return;
+      }
+      if (!name) {
+        alert("請選擇濾心類型！");
+        return;
+      }
+      if (isNaN(lifespan)) {
+        alert("請選擇有效的濾心壽命！");
+        return;
+      }
+
+      fetch(`${apiBaseUrl}/add`, {  
+        method: "POST",  
+        headers: getAuthHeaders(), 
+        body: JSON.stringify({ name, last_replace: lastReplace, lifespan })  
+      })
+        .then(response => {
+            if (response.status === 401) {
+                alert("您的登入已過期或無效，請重新登入。");
+                performLogout();
+                throw new Error("認證失敗");
+            }
+          if (!response.ok) { return response.json().then(errorData => { throw new Error(errorData.message || `HTTP error! status: ${response.status}`); }); }
+          return response.json();
+        })
+        .then(data => {
+          console.log("新增結果:", data);
+          alert(data.message || "濾心已成功新增!");
+          document.getElementById("filter-date").value = "";
+          document.getElementById("filter-expiration").value = "";
+          fetchFilters();
+        })
+        .catch(error => {
+            console.error("新增失敗:", error);
+            alert("新增濾心失敗：" + error.message);
+        });
+    }
+
+    // --- 更新濾心 (移到全局作用域) ---
+    function updateFilter(filterModelName) {  
+      if (!confirm(`確定要將濾心 "${getFilterDisplayName(filterModelName)}" 的更換日期更新為今天嗎？`)) {
+        return;
+      }
+      fetch(`${apiBaseUrl}/update`, {  
+        method: "POST",  
+        headers: getAuthHeaders(), 
+        body: JSON.stringify({ name: filterModelName })  
+      })
+        .then(response => {
+            if (response.status === 401) {
+                alert("您的登入已過期或無效，請重新登入。");
+                performLogout();
+                throw new Error("認證失敗");
+            }
+          if (!response.ok) { return response.json().then(errorData => { throw new Error(errorData.message || `HTTP error! status: ${response.status}`); }); }
+          return response.json();
+        })
+        .then(data => {
+            console.log("更新結果:", data);
+            alert(data.message || "濾心已成功更新!");
+            fetchFilters();
+        })
+        .catch(error => {
+            console.error("更新失敗:", error);
+            alert("更新濾心失敗：" + error.message);
+        });
+    }
+
+    // --- 刪除濾心 (移到全局作用域) ---
+    function deleteFilter(filterModelName) {  
+      if (!confirm(`確定要刪除濾心 "${getFilterDisplayName(filterModelName)}" 嗎？此操作無法復原。`)) {
+        return;
+      }
+      fetch(`${apiBaseUrl}/delete`, {  
+        method: "POST",  
+        headers: getAuthHeaders(), 
+        body: JSON.stringify({ name: filterModelName })  
+      })
+        .then(response => {
+            if (response.status === 401) {
+                alert("您的登入已過期或無效，請重新登入。");
+                performLogout();
+                throw new Error("認證失敗");
+            }
+          if (!response.ok) { return response.json().then(errorData => { throw new Error(errorData.message || `HTTP error! status: ${response.status}`); }); }
+          return response.json();
+        })
+        .then(data => {
+            console.log("刪除結果:", data);
+            alert(data.message || "濾心已成功刪除!");
+            fetchFilters();
+        })
+        .catch(error => {
+            console.error("刪除失敗:", error);
+            alert("刪除濾心失敗：" + error.message);
+        });
+    }
+
+    // 輔助函數：創建表格單元格 (移到全局作用域)
     function createCell(value) {  
       const td = document.createElement("td");  
       td.textContent = value;  
       return td;  
     }
 
-    // 輔助函數：創建帶圖示的按鈕
+    // 輔助函數：創建帶圖示的按鈕 (移到全局作用域)
     function createButtonWithIcon(label, iconClass, action, btnClass = "") {
       const btn = document.createElement("button");
       const icon = document.createElement("i");
@@ -409,7 +491,7 @@
       return btn;
     }
 
-    // 頁面載入完成時執行
+    // 頁面載入完成時執行 (DOMContentLoaded 內部只保留初始化邏輯)
     document.addEventListener("DOMContentLoaded", () => {
         toggleContentVisibility();  
 
@@ -417,7 +499,6 @@
         const year = today.getFullYear();
         const month = (today.getMonth() + 1).toString().padStart(2, '0');
         const day = today.getDate().toString().padStart(2, '0');
-        // 設定新增濾心區塊的日期為今天的 YYYY-MM-DD
         document.getElementById("filter-date").value = `${year}-${month}-${day}`;
         updateNewFilterExpirationPreview(); 
 
