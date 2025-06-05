@@ -4,31 +4,33 @@ import json
 import datetime
 import os
 from flask_jwt_extended import create_access_token, jwt_required, JWTManager, get_jwt_identity
+import pytz # <-- 新增導入 pytz
 
 # --- 全局變數定義 ---
+# 注意：預設濾心日期也建議改為 UTC，但為簡化，這裡暫時保留 YYYY-MM-DD 格式
 DEFAULT_FILTERS = [
     {"name": "UF-591", "last_replace": "2024-06-01", "lifespan": 90},
     {"name": "UF-592", "last_replace": "2024-06-01", "lifespan": 180}
 ]
 
 # JSON 檔案路徑
-# 在 Render 上，這個路徑會是容器內的文件系統，不是持久化的
 FILTERS_FILE = "filters.json" 
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
 # --- JWT 設定 ---
-app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY", "your-super-secret-jwt-key-PLEASE-CHANGE-ME-IN-RENDER") # <-- **非常重要**：請在 Render 環境變數中設定
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = datetime.timedelta(days=7) # JWT 存活時間，例如 7 天
+app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY", "your-super-secret-jwt-key-PLEASE-CHANGE-ME-IN-RENDER")
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = datetime.timedelta(days=7)
 jwt = JWTManager(app)
 
-# 用於簡單認證的預設使用者 (僅供演示，實際應用不應硬編碼)
+# 用於簡單認證的預設使用者
 USERS = {
-    "admin": "hxcs04water" # **請務必使用更複雜且只有您知道的密碼**
+    "admin": "hxcs04water"
 }
 
-# --- JSON 檔案操作函式 ---
+# --- JSON 檔案操作函式 (保持不變) ---
+# ... (load_filters 和 save_filters 保持不變) ...
 
 def load_filters():
     """從 JSON 檔案載入濾心資料"""
@@ -86,7 +88,9 @@ def init_data_file():
 with app.app_context():
     init_data_file()
 
-# --- 認證路由 ---
+# --- 認證路由 (保持不變) ---
+# ... (login 函數保持不變) ...
+
 @app.route("/login", methods=["POST", "OPTIONS"])
 @cross_origin()
 def login():
@@ -111,10 +115,27 @@ def login():
 
 @app.route("/")
 def home():
-    return jsonify({"message": "Flask 服務運行中 🚀"})
+    # 診斷用代碼，可以保留或刪除
+    now_utc = datetime.datetime.now(datetime.timezone.utc)
+    try:
+        # 台灣時區
+        taipei_tz = pytz.timezone('Asia/Taipei')
+        now_taipei = now_utc.astimezone(taipei_tz)
+        taipei_time_str = now_taipei.strftime("%Y-%m-%d %H:%M:%S %Z%z")
+    except Exception as e:
+        taipei_time_str = f"轉換台灣時間失敗: {e}"
+
+    server_local_time_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    return jsonify({
+        "message": "Flask 服務運行中 🚀",
+        "server_local_time": server_local_time_str, # 服務器在運行時的本地時間
+        "server_utc_time": now_utc.strftime("%Y-%m-%d %H:%M:%S UTC"),
+        "server_taipei_time": taipei_time_str # 轉換到台灣時間
+    })
 
 @app.route("/filters", methods=["GET"])
-@jwt_required() # 保護這個路由
+@jwt_required()
 def get_filters():
     current_user = get_jwt_identity()
     print(f"DEBUG: 用戶 '{current_user}' 收到 /filters 請求。")
@@ -127,7 +148,7 @@ def get_filters():
         return jsonify({"message": f"伺服器錯誤: {e}"}), 500
 
 @app.route("/add", methods=["POST"])
-@jwt_required() # 保護這個路由
+@jwt_required()
 def add_filter():
     current_user = get_jwt_identity()
     print(f"DEBUG: 用戶 '{current_user}' 收到 /add 請求。")
@@ -156,7 +177,7 @@ def add_filter():
     
     new_filter = {
         "name": data["name"],
-        "last_replace": data["last_replace"],
+        "last_replace": data["last_replace"], # 前端傳過來的日期字符串 (應該是 YYYY-MM-DD 格式)
         "lifespan": lifespan_int
     }
     filters.append(new_filter)
@@ -167,7 +188,7 @@ def add_filter():
     
 
 @app.route("/update", methods=["POST"])
-@jwt_required() # 保護這個路由
+@jwt_required()
 def update_filter():
     current_user = get_jwt_identity()
     print(f"DEBUG: 用戶 '{current_user}' 收到 /update 請求。")
@@ -181,11 +202,14 @@ def update_filter():
     filter_name_to_update = data["name"]
     found = False
     updated_filter = None
-    current_date = datetime.datetime.now().strftime("%Y-%m-%d")
+    
+    # 獲取當前 UTC 日期作為更新日期
+    current_date_utc = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d") 
+    print(f"DEBUG: 伺服器更新日期 (UTC) 為: {current_date_utc}")
 
     for i, f in enumerate(filters):
         if f['name'] == filter_name_to_update:
-            filters[i]['last_replace'] = current_date
+            filters[i]['last_replace'] = current_date_utc # 更新為 UTC 日期字串
             updated_filter = filters[i]
             found = True
             break
@@ -200,7 +224,7 @@ def update_filter():
 
 @app.route("/delete", methods=["POST", "OPTIONS"])
 @cross_origin()
-@jwt_required() # 保護這個路由
+@jwt_required()
 def delete_filter():
     if request.method == "OPTIONS":
         print("DEBUG: 收到 /delete OPTIONS 預檢請求。")
@@ -229,6 +253,5 @@ def delete_filter():
 
 if __name__ == "__main__":
     print("DEBUG: 正在直接運行 app.py 腳本 (本地開發模式)。")
-    # 在本地開發時，確保資料檔案存在
     init_data_file() 
     app.run(debug=True, port=5000)
